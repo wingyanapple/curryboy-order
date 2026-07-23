@@ -963,7 +963,20 @@ if('serviceWorker' in navigator){try{navigator.serviceWorker.getRegistrations().
 (function(){try{const p=new URLSearchParams(location.search);if(p.get('paid')==='1'){S.cart=[];S.lastOrder={no:p.get('no')||'—',pickup:''};S.screen='success';history.replaceState({},'',location.pathname);}}catch(e){}})();
 /* 由 Wonder 頁撳返嚟（冇俾錢）→ 解除「處理中」，等佢可以再撳 */
 window.addEventListener('pageshow',function(){if(S.paying){S.paying=false;render();}});
+/* 由 Supabase 同步「售罄/即將推出」狀態，後台一改客人即時見到 */
+async function syncStatus(){
+  try{
+    const r=await fetch(CFG.SUPABASE_URL+'/rest/v1/cb_item_status?select=item_id,status',{headers:{apikey:CFG.ANON,Authorization:'Bearer '+CFG.ANON}});
+    const rows=await r.json();
+    if(!Array.isArray(rows))return;
+    const m={};rows.forEach(x=>m[x.item_id]=x.status);
+    ['curries','mains','soups','extras','snacks','drinks','sodas','donburi'].forEach(cat=>{(DB[cat]||[]).forEach(o=>{o.status=m[o.id]||'available';});});
+    render();
+  }catch(e){}
+}
 render();
+syncStatus();
+setInterval(syncStatus,20000);
 </script>
 </body>
 </html>

@@ -26,6 +26,15 @@
   .seg{display:flex;border:1px solid var(--line);border-radius:9px;overflow:hidden}
   .seg button{background:#fff;border:none;padding:8px 12px;font-size:13px;font-weight:700;color:var(--muted)}
   .seg button.on{background:var(--org);color:#fff}
+  .tabs{display:flex;gap:6px;background:var(--card);border-bottom:1px solid var(--line);padding:8px 12px;position:sticky;top:49px;z-index:4}
+  .tabs button{flex:1;border:1px solid var(--line);background:#fff;border-radius:9px;padding:10px;font-weight:700;font-size:14px;color:var(--muted)}
+  .tabs button.on{background:var(--org);color:#fff;border-color:var(--org)}
+  .invrow{display:flex;align-items:center;gap:10px;background:var(--card);border:1px solid var(--line);border-radius:10px;padding:11px 13px;margin-bottom:8px}
+  .invrow .inm{flex:1;font-weight:700;font-size:15px}
+  .invok{font-size:12px;color:var(--grn);font-weight:700}
+  .invso{font-size:12px;color:var(--red);font-weight:800}
+  .invoff{border:1px solid var(--line);background:#fff;color:var(--red);border-radius:8px;padding:9px 13px;font-weight:700;font-size:13px;white-space:nowrap}
+  .invon{border:none;background:var(--grn);color:#fff;border-radius:8px;padding:9px 13px;font-weight:700;font-size:13px;white-space:nowrap}
   .count{font-size:13px;color:var(--muted)}
   /* order card */
   .ord{background:var(--card);border:1px solid var(--line);border-left-width:5px;border-radius:13px;padding:14px;margin-bottom:12px}
@@ -56,7 +65,17 @@
 <script>
 const API='https://kpjilykqswlogxhjmnwj.supabase.co/functions/v1/admin-api';
 let PW=sessionStorage.getItem('cb_admin_pw')||'';
-let ST={orders:[],counts:{},sort:'created',err:'',loading:false};
+let ST={orders:[],counts:{},sort:'created',err:'',loading:false,tab:'orders',inv:{}};
+const MENU=[
+  ['咖喱',[['c_butter','牛油咖喱'],['c_ghost','麻辣咖喱'],['c_king','黑椒咖喱'],['c_queen','小荳蔻咖喱']]],
+  ['主菜',[['m_chicken','鼠尾草烤雞'],['m_brisket','白滷水牛腩'],['m_iberico','黑毛豬肉餅'],['m_miso','味噌燒茄子'],['m_tonkatsu','吉列薄豬扒'],['m_fish','吉列魚柳'],['m_chashu','炙燒叉燒']]],
+  ['湯（湯麵用）',[['s_beef','牛骨湯'],['s_tomato','蕃茄湯'],['s_curry','湯咖喱']]],
+  ['加配蛋',[['e_egg','太陽蛋'],['e_soft','醬油漬溏心蛋'],['e_yolk','醬油漬蛋黃']]],
+  ['汽水',[['sd_coke','可樂'],['sd_cokez','無糖可樂'],['sd_cream','玉泉忌廉'],['sd_soda','梳打水']]],
+  ['飲品',[['d_lt','檸檬茶'],['d_lw','檸檬水'],['d_mt','奶茶'],['d_cf','咖啡'],['d_yy','鴛鴦'],['d_rb','紅豆冰'],['d_ms','忌廉鮮奶'],['d_choc','凍朱古力'],['d_cbc','冷泡咖啡'],['d_cbt','冷泡茶']]],
+  ['小食',[['k1','咖喱魚蛋'],['k2','咖喱燒賣'],['k3','蒜蓉包'],['k4','手工咖喱角'],['k5','咖喱燒賣魚蛋'],['k6','咖喱年糕'],['k7','炸櫛瓜'],['k8','牛油粟米'],['k9','吉列炸蠔'],['k10','阿多波炸雞'],['k11','青檸椒鹽粟米'],['k12','甜脆香雞翼'],['k13','咖喱炸魚皮'],['k14','老海灣薯條'],['k15','霹靂雞軟骨'],['k16','蝦多士'],['k17','檸檬番薯條']]],
+  ['丼飯',[['don_iberico','蔥油黑毛豬肉餅飯'],['don_tonkatsu','甜醬油吉列薄豬扒飯'],['don_oyako','親子烤雞飯'],['don_halibut','西京燒比目魚']]]
+];
 let timer=null;
 
 async function api(action,extra){
@@ -88,6 +107,15 @@ function render(){
       '<button onclick="login()">登入</button><div class="err">'+esc(ST.err)+'</div></div>';
     return;
   }
+  const tab=ST.tab||'orders';
+  const top='<div class="top"><span class="logo">CurryBoy</span><div class="sp"></div><span class="st" id="clk"></span><button onclick="logout()">登出</button></div>';
+  const tabs='<div class="tabs">'+
+    '<button class="'+(tab==='orders'?'on':'')+'" onclick="setTab(\'orders\')">訂單</button>'+
+    '<button class="'+(tab==='inventory'?'on':'')+'" onclick="setTab(\'inventory\')">庫存</button></div>';
+  root.innerHTML=top+tabs+'<div class="wrap">'+(tab==='inventory'?renderInventory():renderOrders())+'</div>';
+  const clk=document.getElementById('clk');if(clk)clk.textContent='自動更新 · '+hhmm(new Date().toISOString());
+}
+function renderOrders(){
   let list=ST.orders.slice();
   if(ST.sort==='pickup')list.sort((a,b)=>String(a.pickup_slot||'').localeCompare(String(b.pickup_slot||'')));
   else list.sort((a,b)=>String(b.created_at).localeCompare(String(a.created_at)));
@@ -107,10 +135,19 @@ function render(){
       (o.note?'<div style="font-size:13px;color:var(--muted)">備註：'+esc(o.note)+'</div>':'')+
       '<div class="ft"><div class="tot">$'+o.total+'</div>'+acts+'</div></div>';
   }).join(''):'<div class="empty">暫時未有訂單<br><span style="font-size:13px">有客付款後會即刻喺度出現</span></div>';
-  root.innerHTML='<div class="top"><span class="logo">CurryBoy</span><span class="st">待處理 '+pending+' 張</span><div class="sp"></div><span class="st" id="clk"></span><button onclick="logout()">登出</button></div>'+
-    '<div class="wrap"><div class="bar"><span class="count">排序：</span><div class="seg"><button class="'+(ST.sort==='created'?'on':'')+'" onclick="setSort(\'created\')">落單順序</button><button class="'+(ST.sort==='pickup'?'on':'')+'" onclick="setSort(\'pickup\')">取餐時間</button></div><div class="sp" style="flex:1"></div><span class="count">共 '+list.length+' 張</span></div>'+cards+'</div>';
-  const clk=document.getElementById('clk');if(clk)clk.textContent='自動更新 · '+hhmm(new Date().toISOString());
+  return '<div class="bar"><span class="count">待處理 <b style="color:var(--red)">'+pending+'</b> 張</span><div class="sp" style="flex:1"></div><div class="seg"><button class="'+(ST.sort==='created'?'on':'')+'" onclick="setSort(\'created\')">落單順序</button><button class="'+(ST.sort==='pickup'?'on':'')+'" onclick="setSort(\'pickup\')">取餐時間</button></div></div>'+cards;
 }
+function renderInventory(){
+  return '<div style="font-size:13px;color:var(--muted);margin:6px 4px 10px">㩒「設為售罄」→ 客人端即時見到灰、揀唔到；隨時可恢復。</div>'+MENU.map(function(g){
+    return '<h3 style="margin:16px 4px 8px;font-size:15px;color:var(--ink)">'+g[0]+'</h3>'+g[1].map(function(it){
+      var st=ST.inv[it[0]]||'available';var so=st==='sold_out';
+      return '<div class="invrow"><span class="inm">'+esc(it[1])+'</span>'+(so?'<span class="invso">售罄</span>':'<span class="invok">供應中</span>')+'<button class="'+(so?'invon':'invoff')+'" onclick="toggleItem(\''+it[0]+'\',\''+st+'\')">'+(so?'恢復供應':'設為售罄')+'</button></div>';
+    }).join('');
+  }).join('');
+}
+async function loadInventory(){const res=await api('inventory_list');if(res&&res.ok){ST.inv={};(res.statuses||[]).forEach(function(x){ST.inv[x.item_id]=x.status;});render();}}
+async function toggleItem(id,cur){const next=cur==='sold_out'?'available':'sold_out';await api('set_item_status',{item_id:id,status:next});ST.inv[id]=next;render();}
+function setTab(t){ST.tab=t;render();if(t==='inventory')loadInventory();}
 render();
 if(PW)refresh(),startPoll();
 </script>
