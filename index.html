@@ -564,8 +564,7 @@ async function payReal(){
       body:JSON.stringify({phone,pickup_slot:c.slot,utensil,total,items,return_base:location.origin+location.pathname})});
     const data=await resp.json().catch(()=>({}));
     if(data&&data.ok&&data.payment_link){
-      S.cart=[];Store.save();          // 清購物車，跳去 Wonder 俾錢
-      window.location.href=data.payment_link;return;
+      window.location.href=data.payment_link;return;   // 跳去 Wonder 俾錢（購物車保留，成功返嚟先清）
     }
     S.paying=false;
     c.err='落單失敗：'+((data&&(data.error||(data.wonder_response&&data.wonder_response.message)))||'請重試');
@@ -963,7 +962,9 @@ window.go=function(s){if(s==='adminLogin'){S.screen='admin';S.admin.logged=false
 /* 清走舊版 PWA service worker，免舊快取遮住新版 */
 if('serviceWorker' in navigator){try{navigator.serviceWorker.getRegistrations().then(function(rs){rs.forEach(function(r){r.unregister();});}).catch(function(){});}catch(e){}}
 /* 由 Wonder 付款後跳返（?paid=1&no=A001）→ 顯示成功頁 */
-(function(){try{const p=new URLSearchParams(location.search);if(p.get('paid')==='1'){S.lastOrder={no:p.get('no')||'—',pickup:''};S.screen='success';history.replaceState({},'',location.pathname);}}catch(e){}})();
+(function(){try{const p=new URLSearchParams(location.search);if(p.get('paid')==='1'){S.cart=[];S.lastOrder={no:p.get('no')||'—',pickup:''};S.screen='success';history.replaceState({},'',location.pathname);}}catch(e){}})();
+/* 由 Wonder 頁撳返嚟（冇俾錢）→ 解除「處理中」，等佢可以再撳 */
+window.addEventListener('pageshow',function(){if(S.paying){S.paying=false;render();}});
 render();
 </script>
 </body>
