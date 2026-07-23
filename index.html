@@ -337,9 +337,7 @@
 
 <script>
 /* ============ MVP NOTE ============
-   單機原型：客戶端 + 後台共用同一份本機資料（方便逐個流程測試）。
-   付款＝Mock（未接 Wonder）。下一步移去 Supabase 做真持久化 + Realtime 跨裝置同步 + Wonder 串接。
-   後台登入（測試用）：帳號 admin / 密碼 curryboy888
+   客人落單 → Wonder 真付款 → 訂單入 Supabase。後台睇單用獨立網址 admin.html（密碼保護）。
 =================================== */
 
 /* ---------- safe storage ---------- */
@@ -615,7 +613,7 @@ function viewHome(){
     '<div class="scrollhint">向下了解更多 ▾</div></div>'+
     '<div class="sec-h"><span class="bar"></span><h2>四款咖喱</h2><span class="en">OUR CURRIES</span></div><div class="curry-pics">'+cards+'</div>'+
     '<div class="sec-h"><span class="bar"></span><h2>人氣餐點</h2><span class="en">TOP PICKS</span></div><div class="rank">'+picks+'</div>'+
-    '<a class="admin-link" onclick="go(\'adminLogin\')">· 員工後台 ADMIN ·</a></div>';
+    '</div>';
 }
 
 function viewMenu(){
@@ -801,7 +799,7 @@ function viewAdminLogin(){
     (S.admin.err?'<div class="lerr">'+S.admin.err+'</div>':'')+
     '<input id="admUser" placeholder="帳號"><input id="admPass" type="password" placeholder="密碼">'+
     '<button class="lbtn" onclick="adminLogin()">登入</button>'+
-    '<div class="lhint">MVP 測試帳號<br>帳號：admin　密碼：curryboy888</div></div></div>';
+    '</div></div>';
 }
 window.adminLogin=()=>{const u=$('admUser').value,p=$('admPass').value;
   if(u==='admin'&&p==='curryboy888'){S.admin.logged=true;S.admin.err='';render();}
