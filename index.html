@@ -966,11 +966,20 @@ window.addEventListener('pageshow',function(){if(S.paying){S.paying=false;render
 /* 由 Supabase 同步「售罄/即將推出」狀態，後台一改客人即時見到 */
 async function syncStatus(){
   try{
-    const r=await fetch(CFG.SUPABASE_URL+'/rest/v1/cb_item_status?select=item_id,status',{headers:{apikey:CFG.ANON,Authorization:'Bearer '+CFG.ANON}});
+    const h={apikey:CFG.ANON,Authorization:'Bearer '+CFG.ANON};
+    const r=await fetch(CFG.SUPABASE_URL+'/rest/v1/cb_item_status?select=item_id,status',{headers:h});
     const rows=await r.json();
-    if(!Array.isArray(rows))return;
-    const m={};rows.forEach(x=>m[x.item_id]=x.status);
-    ['curries','mains','soups','extras','snacks','drinks','sodas','donburi'].forEach(cat=>{(DB[cat]||[]).forEach(o=>{o.status=m[o.id]||'available';});});
+    if(Array.isArray(rows)){
+      const m={};rows.forEach(x=>m[x.item_id]=x.status);
+      ['curries','mains','soups','extras','snacks','drinks','sodas','donburi'].forEach(cat=>{(DB[cat]||[]).forEach(o=>{o.status=m[o.id]||'available';});});
+    }
+    const today=new Date().toLocaleDateString('en-CA',{timeZone:'Asia/Hong_Kong'});
+    const rs=await fetch(CFG.SUPABASE_URL+'/rest/v1/cb_slot_closed?slot_date=eq.'+today+'&select=slot_time',{headers:h});
+    const cs=await rs.json();
+    if(Array.isArray(cs)){
+      const closed={};cs.forEach(x=>closed[x.slot_time]=1);
+      (DB.slots||[]).forEach(s=>{s.manual=closed[s.time]?'closed':'auto';});
+    }
     render();
   }catch(e){}
 }

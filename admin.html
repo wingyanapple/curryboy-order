@@ -35,6 +35,11 @@
   .invso{font-size:12px;color:var(--red);font-weight:800}
   .invoff{border:1px solid var(--line);background:#fff;color:var(--red);border-radius:8px;padding:9px 13px;font-weight:700;font-size:13px;white-space:nowrap}
   .invon{border:none;background:var(--grn);color:#fff;border-radius:8px;padding:9px 13px;font-weight:700;font-size:13px;white-space:nowrap}
+  .slotgrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(88px,1fr));gap:9px}
+  .slotbtn{display:flex;flex-direction:column;align-items:center;gap:2px;border-radius:10px;padding:11px 6px;font-weight:800;font-size:16px;border:1.5px solid}
+  .slotbtn small{font-size:11px;font-weight:700}
+  .slotbtn.open{background:#eefaf1;border-color:var(--grn);color:var(--grn)}
+  .slotbtn.closed{background:#fdecec;border-color:var(--red);color:var(--red)}
   .count{font-size:13px;color:var(--muted)}
   /* order card */
   .datesep{font-size:14px;font-weight:800;color:var(--ink);margin:18px 2px 10px;padding-bottom:7px;border-bottom:2px solid var(--org)}
@@ -66,7 +71,7 @@
 <script>
 const API='https://kpjilykqswlogxhjmnwj.supabase.co/functions/v1/admin-api';
 let PW=sessionStorage.getItem('cb_admin_pw')||'';
-let ST={orders:[],counts:{},sort:'created',err:'',loading:false,tab:'orders',inv:{}};
+let ST={orders:[],counts:{},sort:'created',err:'',loading:false,tab:'orders',inv:{},slotClosed:{}};
 const MENU=[
   ['咖喱',[['c_butter','牛油咖喱'],['c_ghost','麻辣咖喱'],['c_king','黑椒咖喱'],['c_queen','小荳蔻咖喱']]],
   ['主菜',[['m_chicken','鼠尾草烤雞'],['m_brisket','白滷水牛腩'],['m_iberico','黑毛豬肉餅'],['m_miso','味噌燒茄子'],['m_tonkatsu','吉列薄豬扒'],['m_fish','吉列魚柳'],['m_chashu','炙燒叉燒']]],
@@ -118,8 +123,10 @@ function render(){
   const top='<div class="top"><span class="logo">CurryBoy</span><div class="sp"></div><span class="st" id="clk"></span><button onclick="logout()">登出</button></div>';
   const tabs='<div class="tabs">'+
     '<button class="'+(tab==='orders'?'on':'')+'" onclick="setTab(\'orders\')">訂單</button>'+
-    '<button class="'+(tab==='inventory'?'on':'')+'" onclick="setTab(\'inventory\')">庫存</button></div>';
-  root.innerHTML=top+tabs+'<div class="wrap">'+(tab==='inventory'?renderInventory():renderOrders())+'</div>';
+    '<button class="'+(tab==='inventory'?'on':'')+'" onclick="setTab(\'inventory\')">庫存</button>'+
+    '<button class="'+(tab==='slots'?'on':'')+'" onclick="setTab(\'slots\')">時段</button></div>';
+  const bodyHtml=tab==='inventory'?renderInventory():tab==='slots'?renderSlots():renderOrders();
+  root.innerHTML=top+tabs+'<div class="wrap">'+bodyHtml+'</div>';
   const clk=document.getElementById('clk');if(clk)clk.textContent='自動更新 · '+hhmm(new Date().toISOString());
 }
 function orderCard(o){
@@ -162,7 +169,15 @@ function renderInventory(){
 }
 async function loadInventory(){const res=await api('inventory_list');if(res&&res.ok){ST.inv={};(res.statuses||[]).forEach(function(x){ST.inv[x.item_id]=x.status;});render();}}
 async function toggleItem(id,cur){const next=cur==='sold_out'?'available':'sold_out';await api('set_item_status',{item_id:id,status:next});ST.inv[id]=next;render();}
-function setTab(t){ST.tab=t;render();if(t==='inventory')loadInventory();}
+function setTab(t){ST.tab=t;render();if(t==='inventory')loadInventory();if(t==='slots')loadSlots();}
+function slotTimes(){const a=[];for(let t=11*60;t<=20*60;t+=15){const h=Math.floor(t/60),m=t%60;a.push((h<10?'0':'')+h+':'+(m<10?'0':'')+m);}return a;}
+async function loadSlots(){const d=hkdate(new Date().toISOString());const res=await api('slots_list',{date:d});ST.slotClosed={};if(res&&res.ok){(res.closed||[]).forEach(function(x){ST.slotClosed[x.slot_time]=1;});}render();}
+async function toggleSlot(t){const d=hkdate(new Date().toISOString());const closed=!ST.slotClosed[t];if(closed)ST.slotClosed[t]=1;else delete ST.slotClosed[t];render();await api('set_slot',{date:d,slot_time:t,closed:closed});}
+function renderSlots(){
+  const d=hkdate(new Date().toISOString());
+  return '<div style="font-size:13px;color:var(--muted);margin:6px 4px 12px">今日（'+dayLabel(new Date().toISOString())+'）取餐時段 · 全部預設開放。㩒一下即關閉，客人揀唔到；再㩒開返。</div>'+
+    '<div class="slotgrid">'+slotTimes().map(function(t){var c=!!ST.slotClosed[t];return '<button class="slotbtn '+(c?'closed':'open')+'" onclick="toggleSlot(\''+t+'\')">'+t+'<small>'+(c?'已關':'開放')+'</small></button>';}).join('')+'</div>';
+}
 render();
 if(PW)refresh(),startPoll();
 </script>
