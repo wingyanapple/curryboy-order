@@ -37,6 +37,7 @@
   .invon{border:none;background:var(--grn);color:#fff;border-radius:8px;padding:9px 13px;font-weight:700;font-size:13px;white-space:nowrap}
   .count{font-size:13px;color:var(--muted)}
   /* order card */
+  .datesep{font-size:14px;font-weight:800;color:var(--ink);margin:18px 2px 10px;padding-bottom:7px;border-bottom:2px solid var(--org)}
   .ord{background:var(--card);border:1px solid var(--line);border-left-width:5px;border-radius:13px;padding:14px;margin-bottom:12px}
   .ord.s-paid{border-left-color:var(--red)}
   .ord.s-making{border-left-color:var(--yel)}
@@ -97,7 +98,13 @@ async function setStatus(id,status){await api('set_status',{id,status});refresh(
 function setSort(s){ST.sort=s;render();}
 
 function esc(s){return (s==null?'':String(s)).replace(/[&<>]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;'}[c]));}
-function hhmm(iso){try{const d=new Date(iso);return d.toLocaleTimeString('zh-HK',{hour:'2-digit',minute:'2-digit',hour12:false});}catch(e){return '';}}
+function hhmm(iso){try{const d=new Date(iso);return d.toLocaleTimeString('zh-HK',{timeZone:'Asia/Hong_Kong',hour:'2-digit',minute:'2-digit',hour12:false});}catch(e){return '';}}
+function hkdate(iso){try{return new Date(iso).toLocaleDateString('en-CA',{timeZone:'Asia/Hong_Kong'});}catch(e){return '';}}
+function dayLabel(iso){
+  const d=hkdate(iso), today=hkdate(new Date().toISOString()), yest=hkdate(new Date(Date.now()-86400000).toISOString());
+  const p=d.split('-'); const nice=(p[1]?parseInt(p[1],10):'')+'月'+(p[2]?parseInt(p[2],10):'')+'日';
+  return nice+(d===today?'（今日）':d===yest?'（昨日）':'');
+}
 
 function render(){
   const root=document.getElementById('root');
@@ -115,27 +122,35 @@ function render(){
   root.innerHTML=top+tabs+'<div class="wrap">'+(tab==='inventory'?renderInventory():renderOrders())+'</div>';
   const clk=document.getElementById('clk');if(clk)clk.textContent='自動更新 · '+hhmm(new Date().toISOString());
 }
+function orderCard(o){
+  const lab={paid:'待處理',making:'製作中',done:'已完成'}[o.status]||o.status;
+  const items=(o.cb_order_items||[]).map(i=>'<div class="it"><span>'+esc(i.label)+(i.qty>1?' ×'+i.qty:'')+(i.item_desc?'<small>'+esc(i.item_desc)+'</small>':'')+'</span><span>$'+(i.unit*i.qty)+'</span></div>').join('')||'<div class="it"><small>（無明細）</small></div>';
+  const vc=ST.counts[o.phone]||0;
+  const vip=vc>1?'<span class="vip">熟客 · 第'+vc+'次</span>':'';
+  const acts=o.status==='paid'?'<button class="b-mk" onclick="setStatus('+o.id+',\'making\')">開始製作</button><button class="b-dn" onclick="setStatus('+o.id+',\'done\')">完成</button>'
+    :o.status==='making'?'<button class="b-bk" onclick="setStatus('+o.id+',\'paid\')">← 返回待處理</button><button class="b-dn" onclick="setStatus('+o.id+',\'done\')">完成</button>'
+    :'<button class="b-bk" onclick="setStatus('+o.id+',\'making\')">← 返回製作中</button>';
+  return '<div class="ord s-'+o.status+'"><div class="hd"><div class="no">'+esc(o.order_no)+'</div><span class="pill '+o.status+'">'+lab+'</span><div class="sp"></div>'+
+    '<div class="times">落單 '+hhmm(o.paid_at||o.created_at)+'<br>取餐 <b>'+esc(o.pickup_slot||'-')+'</b></div></div>'+
+    '<div class="ph">📞 <a href="tel:'+esc(o.phone)+'">'+esc(o.phone)+'</a> '+vip+'</div>'+
+    '<div class="items">'+items+(o.utensil?'<div class="it"><span>外賣餐具 ×'+o.utensil+'</span><span>$'+o.utensil+'</span></div>':'')+'</div>'+
+    (o.note?'<div style="font-size:13px;color:var(--muted)">備註：'+esc(o.note)+'</div>':'')+
+    '<div class="ft"><div class="tot">$'+o.total+'</div>'+acts+'</div></div>';
+}
 function renderOrders(){
   let list=ST.orders.slice();
   if(ST.sort==='pickup')list.sort((a,b)=>String(a.pickup_slot||'').localeCompare(String(b.pickup_slot||'')));
   else list.sort((a,b)=>String(b.created_at).localeCompare(String(a.created_at)));
   const pending=list.filter(o=>o.status==='paid').length;
-  const cards=list.length?list.map(o=>{
-    const lab={paid:'待處理',making:'製作中',done:'已完成'}[o.status]||o.status;
-    const items=(o.cb_order_items||[]).map(i=>'<div class="it"><span>'+esc(i.label)+(i.qty>1?' ×'+i.qty:'')+(i.item_desc?'<small>'+esc(i.item_desc)+'</small>':'')+'</span><span>$'+(i.unit*i.qty)+'</span></div>').join('')||'<div class="it"><small>（無明細）</small></div>';
-    const vc=ST.counts[o.phone]||0;
-    const vip=vc>1?'<span class="vip">熟客 · 第'+vc+'次</span>':'';
-    const acts=o.status==='paid'?'<button class="b-mk" onclick="setStatus('+o.id+',\'making\')">開始製作</button><button class="b-dn" onclick="setStatus('+o.id+',\'done\')">完成</button>'
-      :o.status==='making'?'<button class="b-dn" onclick="setStatus('+o.id+',\'done\')">完成</button><button class="b-bk" onclick="setStatus('+o.id+',\'paid\')">退回</button>'
-      :'<button class="b-bk" onclick="setStatus('+o.id+',\'making\')">退回製作中</button>';
-    return '<div class="ord s-'+o.status+'"><div class="hd"><div class="no">'+esc(o.order_no)+'</div><span class="pill '+o.status+'">'+lab+'</span><div class="sp"></div>'+
-      '<div class="times">落單 '+hhmm(o.paid_at||o.created_at)+'<br>取餐 <b>'+esc(o.pickup_slot||'-')+'</b></div></div>'+
-      '<div class="ph">📞 <a href="tel:'+esc(o.phone)+'">'+esc(o.phone)+'</a> '+vip+'</div>'+
-      '<div class="items">'+items+(o.utensil?'<div class="it"><span>外賣餐具 ×'+o.utensil+'</span><span>$'+o.utensil+'</span></div>':'')+'</div>'+
-      (o.note?'<div style="font-size:13px;color:var(--muted)">備註：'+esc(o.note)+'</div>':'')+
-      '<div class="ft"><div class="tot">$'+o.total+'</div>'+acts+'</div></div>';
-  }).join(''):'<div class="empty">暫時未有訂單<br><span style="font-size:13px">有客付款後會即刻喺度出現</span></div>';
-  return '<div class="bar"><span class="count">待處理 <b style="color:var(--red)">'+pending+'</b> 張</span><div class="sp" style="flex:1"></div><div class="seg"><button class="'+(ST.sort==='created'?'on':'')+'" onclick="setSort(\'created\')">落單順序</button><button class="'+(ST.sort==='pickup'?'on':'')+'" onclick="setSort(\'pickup\')">取餐時間</button></div></div>'+cards;
+  const bar='<div class="bar"><span class="count">待處理 <b style="color:var(--red)">'+pending+'</b> 張</span><div class="sp" style="flex:1"></div><div class="seg"><button class="'+(ST.sort==='created'?'on':'')+'" onclick="setSort(\'created\')">落單順序</button><button class="'+(ST.sort==='pickup'?'on':'')+'" onclick="setSort(\'pickup\')">取餐時間</button></div></div>';
+  if(!list.length)return bar+'<div class="empty">暫時未有訂單<br><span style="font-size:13px">有客付款後會即刻喺度出現</span></div>';
+  let html='',lastDate=null;
+  list.forEach(function(o){
+    const dk=hkdate(o.paid_at||o.created_at);
+    if(dk!==lastDate){html+='<div class="datesep">'+dayLabel(o.paid_at||o.created_at)+'</div>';lastDate=dk;}
+    html+=orderCard(o);
+  });
+  return bar+html;
 }
 function renderInventory(){
   return '<div style="font-size:13px;color:var(--muted);margin:6px 4px 10px">㩒「設為售罄」→ 客人端即時見到灰、揀唔到；隨時可恢復。</div>'+MENU.map(function(g){
