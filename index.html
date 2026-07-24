@@ -777,7 +777,9 @@ function viewFeedback(){
     '<div class="grp-cap">內容</div><div class="field" style="padding-top:4px"><textarea id="fbMsg" class="inp" rows="5" style="resize:none"></textarea></div>'+
     '<div class="cta-wrap"><button class="cta" onclick="submitFb()">提交意見　SUBMIT</button></div>';
 }
-window.submitFb=()=>{const msg=($('fbMsg')?$('fbMsg').value:'').trim();DB.feedback.unshift({type:S.fb.type,rating:S.fb.rating,msg,ts:Date.now()});Store.save();S.fb={type:'食物評價',rating:5};toast('多謝你嘅意見！');go('menu');};
+window.submitFb=async()=>{const msg=($('fbMsg')?$('fbMsg').value:'').trim();
+  try{await fetch(CFG.SUPABASE_URL+'/rest/v1/cb_feedback',{method:'POST',headers:{'Content-Type':'application/json',apikey:CFG.ANON,Authorization:'Bearer '+CFG.ANON,Prefer:'return=minimal'},body:JSON.stringify({type:S.fb.type,rating:S.fb.rating,message:msg})});}catch(e){}
+  S.fb={type:'食物評價',rating:5};toast('多謝你嘅意見！');go('menu');};
 
 /* ============ ADMIN ============ */
 function viewAdmin(){

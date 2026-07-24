@@ -40,6 +40,22 @@
   .slotbtn small{font-size:11px;font-weight:700}
   .slotbtn.open{background:#eefaf1;border-color:var(--grn);color:var(--grn)}
   .slotbtn.closed{background:#fdecec;border-color:var(--red);color:var(--red)}
+  .kpis{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin:4px 0 8px}
+  .kpi{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:14px;text-align:center}
+  .kpi .kv{font-size:26px;font-weight:900}
+  .kpi .kl{font-size:12px;color:var(--muted);margin-top:3px}
+  .sh{font-size:15px;margin:18px 4px 8px;color:var(--ink)}
+  .srow{display:flex;align-items:center;gap:10px;background:var(--card);border:1px solid var(--line);border-radius:9px;padding:11px 13px;margin-bottom:7px;font-size:15px}
+  .srow .sc{color:var(--muted);font-size:13px;margin-left:auto}
+  .srow .sr{font-weight:800;color:var(--org);min-width:64px;text-align:right}
+  .srow.mrow{border-left:4px solid var(--org)}
+  .fbcard{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:13px;margin-bottom:10px}
+  .fbtop{display:flex;align-items:center;gap:8px;font-size:13px}
+  .fbtype{background:#fff3e0;color:#c26a1b;border-radius:6px;padding:2px 8px;font-weight:800;font-size:12px}
+  .fbstars{color:#e0a413;letter-spacing:1px}
+  .fbtime{color:var(--muted);font-size:12px}
+  .fbmsg{margin-top:8px;font-size:15px;line-height:1.5}
+  .fbph{margin-top:6px;font-size:12px;color:var(--muted)}
   .count{font-size:13px;color:var(--muted)}
   /* order card */
   .datesep{font-size:14px;font-weight:800;color:var(--ink);margin:18px 2px 10px;padding-bottom:7px;border-bottom:2px solid var(--org)}
@@ -71,7 +87,7 @@
 <script>
 const API='https://kpjilykqswlogxhjmnwj.supabase.co/functions/v1/admin-api';
 let PW=sessionStorage.getItem('cb_admin_pw')||'';
-let ST={orders:[],counts:{},sort:'created',err:'',loading:false,tab:'orders',inv:{},slotClosed:{}};
+let ST={orders:[],counts:{},sort:'created',err:'',loading:false,tab:'orders',inv:{},slotClosed:{},stats:null,feedback:null};
 const MENU=[
   ['咖喱',[['c_butter','牛油咖喱'],['c_ghost','麻辣咖喱'],['c_king','黑椒咖喱'],['c_queen','小荳蔻咖喱']]],
   ['主菜',[['m_chicken','鼠尾草烤雞'],['m_brisket','白滷水牛腩'],['m_iberico','黑毛豬肉餅'],['m_miso','味噌燒茄子'],['m_tonkatsu','吉列薄豬扒'],['m_fish','吉列魚柳'],['m_chashu','炙燒叉燒']]],
@@ -124,8 +140,10 @@ function render(){
   const tabs='<div class="tabs">'+
     '<button class="'+(tab==='orders'?'on':'')+'" onclick="setTab(\'orders\')">訂單</button>'+
     '<button class="'+(tab==='inventory'?'on':'')+'" onclick="setTab(\'inventory\')">庫存</button>'+
-    '<button class="'+(tab==='slots'?'on':'')+'" onclick="setTab(\'slots\')">時段</button></div>';
-  const bodyHtml=tab==='inventory'?renderInventory():tab==='slots'?renderSlots():renderOrders();
+    '<button class="'+(tab==='slots'?'on':'')+'" onclick="setTab(\'slots\')">時段</button>'+
+    '<button class="'+(tab==='stats'?'on':'')+'" onclick="setTab(\'stats\')">數據</button>'+
+    '<button class="'+(tab==='feedback'?'on':'')+'" onclick="setTab(\'feedback\')">意見</button></div>';
+  const bodyHtml=tab==='inventory'?renderInventory():tab==='slots'?renderSlots():tab==='stats'?renderStats():tab==='feedback'?renderFeedback():renderOrders();
   root.innerHTML=top+tabs+'<div class="wrap">'+bodyHtml+'</div>';
   const clk=document.getElementById('clk');if(clk)clk.textContent='自動更新 · '+hhmm(new Date().toISOString());
 }
@@ -169,7 +187,32 @@ function renderInventory(){
 }
 async function loadInventory(){const res=await api('inventory_list');if(res&&res.ok){ST.inv={};(res.statuses||[]).forEach(function(x){ST.inv[x.item_id]=x.status;});render();}}
 async function toggleItem(id,cur){const next=cur==='sold_out'?'available':'sold_out';await api('set_item_status',{item_id:id,status:next});ST.inv[id]=next;render();}
-function setTab(t){ST.tab=t;render();if(t==='inventory')loadInventory();if(t==='slots')loadSlots();}
+function setTab(t){ST.tab=t;render();if(t==='inventory')loadInventory();if(t==='slots')loadSlots();if(t==='stats')loadStats();if(t==='feedback')loadFeedback();}
+async function loadStats(){const res=await api('stats');if(res&&res.ok){ST.stats=res.stats||null;render();}}
+async function loadFeedback(){const res=await api('feedback_list');if(res&&res.ok){ST.feedback=res.feedback||[];render();}}
+function monthNice(m){const p=String(m||'').split('-');return p[0]+'年'+(p[1]?parseInt(p[1],10):'')+'月';}
+function renderStats(){
+  const s=ST.stats;
+  if(!s)return '<div class="empty">載入中…</div>';
+  const t=s.today||{};
+  const kpi='<div class="kpis">'+
+    '<div class="kpi"><div class="kv" style="color:var(--org)">$'+(t.revenue||0)+'</div><div class="kl">今日營業額</div></div>'+
+    '<div class="kpi"><div class="kv">'+(t.orders||0)+'</div><div class="kl">今日訂單</div></div>'+
+    '<div class="kpi"><div class="kv" style="color:var(--red)">'+(t.pending||0)+'</div><div class="kl">待處理</div></div>'+
+    '<div class="kpi"><div class="kv" style="color:var(--grn)">'+(t.done||0)+'</div><div class="kl">已完成</div></div></div>';
+  const days=(s.days||[]).map(function(d){return '<div class="srow"><span>'+dayLabel(d.d+'T12:00:00+08:00')+'</span><span class="sc">'+d.orders+' 單</span><span class="sr">$'+d.revenue+'</span></div>';}).join('')||'<div class="srow"><small>未有記錄</small></div>';
+  const months=(s.months||[]).map(function(m){return '<div class="srow mrow"><span>'+monthNice(m.m)+'</span><span class="sc">'+m.orders+' 單</span><span class="sr">$'+m.revenue+'</span></div>';}).join('')||'<div class="srow"><small>未有記錄</small></div>';
+  return kpi+'<h3 class="sh">每日流水</h3>'+days+'<h3 class="sh">月結（逐月流水）</h3>'+months+'<div style="height:20px"></div>';
+}
+function renderFeedback(){
+  const f=ST.feedback;
+  if(!f)return '<div class="empty">載入中…</div>';
+  if(!f.length)return '<div class="empty">暫時未有意見</div>';
+  return f.map(function(x){
+    const stars='★★★★★'.slice(0,x.rating||0)+'☆☆☆☆☆'.slice(0,5-(x.rating||0));
+    return '<div class="fbcard"><div class="fbtop"><span class="fbtype">'+esc(x.type||'意見')+'</span><span class="fbstars">'+stars+'</span><span class="sp" style="flex:1"></span><span class="fbtime">'+dayLabel(x.created_at)+' '+hhmm(x.created_at)+'</span></div>'+(x.message?'<div class="fbmsg">'+esc(x.message)+'</div>':'')+(x.phone?'<div class="fbph">電話：'+esc(x.phone)+'</div>':'')+'</div>';
+  }).join('');
+}
 function slotTimes(){const a=[];for(let t=11*60;t<=20*60;t+=15){const h=Math.floor(t/60),m=t%60;a.push((h<10?'0':'')+h+':'+(m<10?'0':'')+m);}return a;}
 async function loadSlots(){const d=hkdate(new Date().toISOString());const res=await api('slots_list',{date:d});ST.slotClosed={};if(res&&res.ok){(res.closed||[]).forEach(function(x){ST.slotClosed[x.slot_time]=1;});}render();}
 async function toggleSlot(t){const d=hkdate(new Date().toISOString());const closed=!ST.slotClosed[t];if(closed)ST.slotClosed[t]=1;else delete ST.slotClosed[t];render();await api('set_slot',{date:d,slot_time:t,closed:closed});}
