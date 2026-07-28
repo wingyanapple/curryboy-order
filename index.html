@@ -100,6 +100,7 @@
   .setcard .en{font-family:var(--pixel);font-size:7px;color:var(--muted);margin-top:6px}
   .setcard .pr{font-family:var(--pixel);font-size:20px;color:var(--gold);text-shadow:2px 2px 0 var(--red-deep)}
   .setcard .pr small{font-family:var(--han);font-size:11px;color:var(--muted)}
+  .setcard.so{opacity:.5;pointer-events:none}.setcard.so .han{color:var(--soldout)}
 
   .listcard{margin:8px 16px 0;background:var(--card);border:1px solid var(--line);border-radius:12px;overflow:hidden}
   .li{display:flex;align-items:center;gap:12px;padding:13px 14px;border-bottom:1px solid var(--line)}
@@ -618,7 +619,7 @@ function viewHome(){
 
 function viewMenu(){
   const sets=DB.sets.map(s=>'<div class="setcard '+(s.kind==='soup'?'udon':'curry')+'" onclick="openBuild(\''+s.id+'\')"><div class="info"><div class="han">'+s.zh+'</div><div class="en">'+s.en+' · 全日供應</div></div><div class="pr">$'+s.price+'<small>起</small></div></div>').join('');
-  const dons=DB.donburi.map(d=>{const so=d.status!=='available';return '<div class="setcard udon'+(so?' so':'')+'"'+(so?'':' onclick="openDonburi(\''+d.id+'\')"')+'><div class="info"><div class="han">'+d.zh+(so?'（售罄）':'')+'</div><div class="en">'+d.en+'</div></div><div class="pr">$'+d.price+'</div></div>';}).join('');
+  const dons=DB.donburi.map(d=>{const so=d.status!=='available';return '<div class="setcard udon'+(so?' so':'')+'"'+(so?'':' onclick="openDonburi(\''+d.id+'\')"')+'><div class="info"><div class="han">'+d.zh+(so?' <span class="so-tag">售罄</span>':'')+'</div><div class="en">'+d.en+'</div></div><div class="pr">$'+d.price+'</div></div>';}).join('');
   return appbar()+
     '<div class="sec-h"><span class="bar"></span><h2>全日套餐</h2><span class="en">ALL DAY SETS</span></div>'+sets+
     '<div class="sec-h"><span class="bar"></span><h2>全日供應丼飯</h2><span class="en">ALL DAY DONBURI</span></div>'+dons+
