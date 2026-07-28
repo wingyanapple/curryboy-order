@@ -75,10 +75,14 @@
   .ord .ph{display:flex;align-items:center;gap:8px;font-size:14px;margin-bottom:4px}
   .ord .ph a{color:var(--org);font-weight:800;text-decoration:none}
   .vip{background:#fff3e0;color:#c26a1b;border:1px solid #f0c48a;border-radius:6px;font-size:11px;font-weight:800;padding:2px 7px}
-  .ord .ft{display:flex;align-items:center;gap:9px;margin-top:10px}
+  .ord .ft{display:flex;align-items:center;gap:9px;margin-top:10px;flex-wrap:wrap}
   .ord .tot{font-size:19px;font-weight:900;flex:1}
   .ord .ft button{border:none;border-radius:9px;padding:10px 14px;font-weight:800;font-size:14px;color:#fff}
   .b-mk{background:var(--yel)}.b-dn{background:var(--grn)}.b-bk{background:#fff;color:var(--muted);border:1px solid var(--line)!important}
+  .b-rp{background:#8b7e6a}
+  .prn{font-size:11px;font-weight:800;padding:2px 8px;border-radius:12px}
+  .prn.y{color:var(--grn);background:#eefaf1}.prn.n{color:var(--muted);background:#f1ece1}
+  #cbtoast{position:fixed;left:50%;bottom:32px;transform:translateX(-50%);background:#2a2118;color:#fff;padding:11px 18px;border-radius:22px;font-size:14px;font-weight:700;z-index:50;box-shadow:0 4px 16px rgba(0,0,0,.25);opacity:0;transition:opacity .3s;pointer-events:none}
   .empty{text-align:center;color:var(--muted);padding:60px 20px;font-size:15px}
 </style>
 </head>
@@ -117,6 +121,8 @@ async function refresh(){const res=await api('list');if(res&&res.ok){ST.orders=r
 function startPoll(){clearInterval(timer);timer=setInterval(refresh,8000);}
 async function setStatus(id,status){await api('set_status',{id,status});refresh();}
 function setSort(s){ST.sort=s;render();}
+function toast(msg){var t=document.getElementById('cbtoast');if(!t){t=document.createElement('div');t.id='cbtoast';document.body.appendChild(t);}t.textContent=msg;t.style.opacity='1';clearTimeout(t._h);t._h=setTimeout(function(){t.style.opacity='0';},2400);}
+async function reprint(id){if(!confirm('重新打印呢張單？（會出返 2 張）'))return;const res=await api('reprint',{id});toast(res&&res.ok?'已送去打印機，稍等出單':'重印失敗，請再試');refresh();}
 
 function esc(s){return (s==null?'':String(s)).replace(/[&<>]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;'}[c]));}
 function hhmm(iso){try{const d=new Date(iso);return d.toLocaleTimeString('zh-HK',{timeZone:'Asia/Hong_Kong',hour:'2-digit',minute:'2-digit',hour12:false});}catch(e){return '';}}
@@ -160,7 +166,9 @@ function orderCard(o){
     '<div class="ph">📞 <a href="tel:'+esc(o.phone)+'">'+esc(o.phone)+'</a> '+vip+'</div>'+
     '<div class="items">'+items+(o.utensil?'<div class="it"><span>外賣餐具 ×'+o.utensil+'</span><span>$'+o.utensil+'</span></div>':'')+'</div>'+
     (o.note?'<div style="font-size:13px;color:var(--muted)">備註：'+esc(o.note)+'</div>':'')+
-    '<div class="ft"><div class="tot">$'+o.total+'</div>'+acts+'</div></div>';
+    '<div class="ft"><div class="tot">$'+o.total+'</div>'+
+    '<span class="prn '+(o.printed_at?'y':'n')+'">'+(o.printed_at?'🖨 已印':'🖨 未印')+'</span>'+
+    '<button class="b-rp" onclick="reprint('+o.id+')">重印</button>'+acts+'</div></div>';
 }
 function renderOrders(){
   let list=ST.orders.slice();
