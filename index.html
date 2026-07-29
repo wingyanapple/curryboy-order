@@ -459,7 +459,8 @@ function dstr(ts){const d=new Date(ts);return d.getFullYear()+'-'+String(d.getMo
 function mstr(ts){const d=new Date(ts);return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0');}
 function today(){return dstr(Date.now());}
 function nextOrderNo(){if(DB.orderSeq.date!==today()){DB.orderSeq={date:today(),n:0};}DB.orderSeq.n++;return 'A'+String(DB.orderSeq.n).padStart(3,'0');}
-function slotStatus(s){return s.manual==='closed'?'full':'available';}
+function slotPassed(t){const p=/(\d{1,2}):(\d{2})/.exec(t);if(!p)return false;const sm=(+p[1])*60+(+p[2]);const n=new Date();return sm < n.getHours()*60+n.getMinutes();}
+function slotStatus(s){if(s.manual==='closed')return 'full';if(slotPassed(s.time))return 'past';return 'available';}
 function toast(msg){const t=$('toast');t.innerHTML='<div class="toast">'+msg+'</div>';clearTimeout(window._tt);window._tt=setTimeout(()=>t.innerHTML='',1700);}
 const thumb='<span class="rec"><svg width="15" height="15" viewBox="0 0 24 24" fill="#e8951e"><path d="M2 10h3v10H2zM21.8 11.3a2 2 0 0 0-2-2.3h-4.8l.8-3.7a1.5 1.5 0 0 0-2.8-1L8 9.6V20h9.2a2 2 0 0 0 2-1.6l1.4-6.6z"/></svg></span>';
 const mapSVG='<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#e8951e" stroke-width="2"><path d="M12 21s7-6.2 7-12a7 7 0 1 0-14 0c0 5.8 7 12 7 12z"/><circle cx="12" cy="9" r="2.5"/></svg>';
@@ -551,7 +552,7 @@ async function payReal(){
   if(c.slot===null){c.err='請揀取餐時間';render();return;}
   if(!/^[2-9]\d{7}$/.test(phone)){c.phoneErr='請輸入有效嘅 8 位香港電話號碼';render();return;}
   const slot=DB.slots.find(s=>s.time===c.slot);
-  if(slot&&slotStatus(slot)==='full'){c.err='呢個時段已關閉，請另揀';c.slot=null;render();return;}
+  if(slot&&slotStatus(slot)!=='available'){c.err=slotStatus(slot)==='past'?'呢個取餐時間已過，請另揀':'呢個時段已關閉，請另揀';c.slot=null;render();return;}
   if(!S.cart.length){c.err='購物車係空嘅';render();return;}
   const utensil=c.utensil||0;
   const total=cartTotal()+utensil*DB.utensilPrice;
@@ -736,7 +737,7 @@ window.cartDel=i=>{S.cart.splice(i,1);render();};
 function viewCheckout(){
   const c=S.checkout;
   const slots=DB.slots.map(s=>{const st=slotStatus(s);const on=c.slot===s.time;
-    return '<div class="slot '+(st==='full'?'full':'')+' '+(on?'on':'')+'" '+(st==='full'?'':'onclick="pickSlot(\''+s.time+'\')"')+'>'+s.time+(st==='full'?'<small>已滿</small>':'')+'</div>';}).join('');
+    const dis=st!=='available';return '<div class="slot '+(dis?'full':'')+' '+(on?'on':'')+'" '+(dis?'':'onclick="pickSlot(\''+s.time+'\')"')+'>'+s.time+(st==='full'?'<small>已滿</small>':(st==='past'?'<small>已過</small>':''))+'</div>';}).join('');
   const total=cartTotal()+(c.utensil||0)*DB.utensilPrice;
   const uNone=c.utensil===0, uHas=c.utensil>0;
   return appbar("go('cart')")+'<div class="b-title">結帳 <em>CHECKOUT</em></div>'+
