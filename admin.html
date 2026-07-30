@@ -26,8 +26,8 @@
   .seg{display:flex;border:1px solid var(--line);border-radius:9px;overflow:hidden}
   .seg button{background:#fff;border:none;padding:8px 12px;font-size:13px;font-weight:700;color:var(--muted)}
   .seg button.on{background:var(--org);color:#fff}
-  .tabs{display:flex;gap:6px;background:var(--card);border-bottom:1px solid var(--line);padding:8px 12px;position:sticky;top:49px;z-index:4}
-  .tabs button{flex:1;border:1px solid var(--line);background:#fff;border-radius:9px;padding:10px;font-weight:700;font-size:14px;color:var(--muted)}
+  .tabs{display:flex;gap:5px;background:var(--card);border-bottom:1px solid var(--line);padding:8px 10px;position:sticky;top:49px;z-index:4}
+  .tabs button{flex:1;border:1px solid var(--line);background:#fff;border-radius:9px;padding:9px 4px;font-weight:700;font-size:13px;color:var(--muted);white-space:nowrap}
   .tabs button.on{background:var(--org);color:#fff;border-color:var(--org)}
   .invrow{display:flex;align-items:center;gap:10px;background:var(--card);border:1px solid var(--line);border-radius:10px;padding:11px 13px;margin-bottom:8px}
   .invrow .inm{flex:1;font-weight:700;font-size:15px}
@@ -85,13 +85,19 @@
   .prn.y{color:var(--grn);background:#eefaf1}.prn.n{color:var(--muted);background:#f1ece1}
   #cbtoast{position:fixed;left:50%;bottom:32px;transform:translateX(-50%);background:#2a2118;color:#fff;padding:11px 18px;border-radius:22px;font-size:14px;font-weight:700;z-index:50;box-shadow:0 4px 16px rgba(0,0,0,.25);opacity:0;transition:opacity .3s;pointer-events:none}
   .empty{text-align:center;color:var(--muted);padding:60px 20px;font-size:15px}
+  .ord.s-pending{border-left-color:var(--muted)}
+  .pill.pending{background:var(--muted)}
+  .pk-far{display:inline-block;font-size:21px;font-weight:900;color:var(--org);background:#fff3e6;border:1px solid #f0c48a;border-radius:10px;padding:6px 12px;margin:2px 0 10px}
+  .pk-far span{font-size:13px;font-weight:800;color:#c26a1b}
+  .items .it.uten{font-size:16px;font-weight:800;color:var(--ink);padding:3px 0}
+  .tabs .badge{display:inline-block;min-width:15px;margin-left:2px;padding:0 3px;background:var(--red);color:#fff;border-radius:9px;font-size:10px;font-weight:800;line-height:15px;font-style:normal;vertical-align:top}
 </style>
 </head>
 <body>
 <div id="root"></div>
 <script>
 const API='https://kpjilykqswlogxhjmnwj.supabase.co/functions/v1/admin-api';
-let PW=sessionStorage.getItem('cb_admin_pw')||'';
+let PW=localStorage.getItem('cb_admin_pw')||'';
 let ST={orders:[],counts:{},sort:'created',err:'',loading:false,tab:'orders',inv:{},slotClosed:{},stats:null,feedback:null};
 const MENU=[
   ['咖喱',[['c_butter','牛油咖喱'],['c_ghost','麻辣咖喱'],['c_king','黑椒咖喱'],['c_queen','小荳蔻咖喱']]],
@@ -100,7 +106,7 @@ const MENU=[
   ['加配蛋',[['e_egg','太陽蛋'],['e_soft','醬油漬溏心蛋'],['e_yolk','醬油漬蛋黃']]],
   ['汽水',[['sd_coke','可樂'],['sd_cokez','無糖可樂'],['sd_cream','玉泉忌廉'],['sd_soda','梳打水']]],
   ['飲品',[['d_lt','檸檬茶'],['d_lw','檸檬水'],['d_mt','奶茶'],['d_cf','咖啡'],['d_yy','鴛鴦'],['d_rb','紅豆冰'],['d_ms','忌廉鮮奶'],['d_choc','凍朱古力'],['d_cbc','冷泡咖啡'],['d_cbt','冷泡茶']]],
-  ['小食',[['k1','咖喱魚蛋'],['k2','咖喱燒賣'],['k3','蒜蓉包'],['k4','手工咖喱角'],['k5','咖喱燒賣魚蛋'],['k6','咖喱年糕'],['k7','炸櫛瓜'],['k8','牛油粟米'],['k9','吉列炸蠔'],['k10','阿多波炸雞'],['k11','青檸椒鹽粟米'],['k12','甜脆香雞翼'],['k13','咖喱炸魚皮'],['k14','老海灣薯條'],['k15','霹靂雞軟骨'],['k16','蝦多士'],['k17','檸檬番薯條']]],
+  ['小食',[['k1','咖喱魚蛋'],['k2','咖喱燒賣'],['k3','蒜蓉包'],['k4','手工咖喱角'],['k5','咖喱燒賣魚蛋'],['k6','咖喱年糕'],['k7','炸翠玉瓜'],['k8','牛油粟米'],['k9','吉列炸蠔'],['k10','阿多波炸雞'],['k11','青檸椒鹽粟米'],['k12','甜脆香雞翼'],['k13','咖喱炸魚皮'],['k14','老海灣薯條'],['k15','霹靂雞軟骨'],['k16','蝦多士'],['k17','檸檬番薯條']]],
   ['丼飯',[['don_iberico','蔥油黑毛豬肉餅飯'],['don_tonkatsu','甜醬油吉列薄豬扒飯'],['don_oyako','親子烤雞飯'],['don_halibut','西京燒比目魚']]]
 ];
 let timer=null;
@@ -114,11 +120,11 @@ async function login(){
   const v=document.getElementById('pw').value;
   ST.err='';PW=v;
   const res=await api('list');
-  if(res&&res.ok){sessionStorage.setItem('cb_admin_pw',PW);ST.orders=res.orders||[];ST.counts=res.counts||{};ST.spend=res.spend||{};startPoll();render();}
+  if(res&&res.ok){localStorage.setItem('cb_admin_pw',PW);ST.orders=res.orders||[];ST.pending=res.pending||[];ST.counts=res.counts||{};ST.spend=res.spend||{};startPoll();render();}
   else{PW='';ST.err=(res&&res.error)||'登入失敗';render();}
 }
-function logout(){PW='';sessionStorage.removeItem('cb_admin_pw');clearInterval(timer);ST={orders:[],counts:{},sort:'created',err:'',loading:false};render();}
-async function refresh(){const res=await api('list');if(res&&res.ok){ST.orders=res.orders||[];ST.counts=res.counts||{};ST.spend=res.spend||{};render();}else if(res&&res.error==='密碼錯誤'){logout();}}
+function logout(){PW='';localStorage.removeItem('cb_admin_pw');clearInterval(timer);ST={orders:[],counts:{},sort:'created',err:'',loading:false};render();}
+async function refresh(){const res=await api('list');if(res&&res.ok){ST.orders=res.orders||[];ST.pending=res.pending||[];ST.counts=res.counts||{};ST.spend=res.spend||{};render();}else if(res&&res.error==='密碼錯誤'){logout();}}
 function startPoll(){clearInterval(timer);timer=setInterval(refresh,8000);}
 async function setStatus(id,status){await api('set_status',{id,status});refresh();}
 function setSort(s){ST.sort=s;render();}
@@ -144,33 +150,61 @@ function render(){
   }
   const tab=ST.tab||'orders';
   const top='<div class="top"><span class="logo">CurryBoy</span><div class="sp"></div><span class="st" id="clk"></span><button onclick="logout()">登出</button></div>';
+  const npd=(ST.pending||[]).length;
   const tabs='<div class="tabs">'+
     '<button class="'+(tab==='orders'?'on':'')+'" onclick="setTab(\'orders\')">訂單</button>'+
+    '<button class="'+(tab==='pending'?'on':'')+'" onclick="setTab(\'pending\')">未完成'+(npd?'<i class="badge">'+npd+'</i>':'')+'</button>'+
     '<button class="'+(tab==='inventory'?'on':'')+'" onclick="setTab(\'inventory\')">庫存</button>'+
     '<button class="'+(tab==='slots'?'on':'')+'" onclick="setTab(\'slots\')">時段</button>'+
     '<button class="'+(tab==='stats'?'on':'')+'" onclick="setTab(\'stats\')">數據</button>'+
     '<button class="'+(tab==='feedback'?'on':'')+'" onclick="setTab(\'feedback\')">意見</button></div>';
-  const bodyHtml=tab==='inventory'?renderInventory():tab==='slots'?renderSlots():tab==='stats'?renderStats():tab==='feedback'?renderFeedback():renderOrders();
+  const bodyHtml=tab==='pending'?renderPending():tab==='inventory'?renderInventory():tab==='slots'?renderSlots():tab==='stats'?renderStats():tab==='feedback'?renderFeedback():renderOrders();
   root.innerHTML=top+tabs+'<div class="wrap">'+bodyHtml+'</div>';
   const clk=document.getElementById('clk');if(clk)clk.textContent='自動更新 · '+hhmm(new Date().toISOString());
 }
+function pickupInfo(slot){
+  const m=/(\d{1,2}):(\d{2})/.exec(slot||'');if(!m)return{mins:null,far:false};
+  const pm=(+m[1])*60+(+m[2]);const n=new Date();
+  const mins=pm-(n.getHours()*60+n.getMinutes());
+  return {mins:mins,far:mins>30};
+}
 function orderCard(o){
-  const lab={paid:'待處理',making:'製作中',done:'已完成'}[o.status]||o.status;
+  const isP=o.status==='pending';
+  const lab={paid:'待處理',making:'製作中',done:'已完成',pending:'未完成付款'}[o.status]||o.status;
   const items=(o.cb_order_items||[]).map(i=>'<div class="it"><span>'+esc(i.label)+(i.qty>1?' ×'+i.qty:'')+(i.item_desc?'<small>'+esc(i.item_desc)+'</small>':'')+'</span><span>$'+(i.unit*i.qty)+'</span></div>').join('')||'<div class="it"><small>（無明細）</small></div>';
   const vc=ST.counts[o.phone]||0;
   const vs=(ST.spend||{})[o.phone]||0;
   const vip=vc>1?'<span class="vip">熟客 · 第'+vc+'次 · 累積 $'+vs+'</span>':'<span class="cust">第'+vc+'次 · 累積 $'+vs+'</span>';
-  const acts=o.status==='paid'?'<button class="b-mk" onclick="setStatus('+o.id+',\'making\')">開始製作</button><button class="b-dn" onclick="setStatus('+o.id+',\'done\')">完成</button>'
+  const pk=pickupInfo(o.pickup_slot);
+  const bigPk=(!isP&&pk.far)?'<div class="pk-far">取餐 '+esc(o.pickup_slot||'-')+' <span>'+pk.mins+' 分鐘後</span></div>':'';
+  const uten=o.utensil?'<div class="it uten"><span>外賣餐具 ×'+o.utensil+'</span><span>$'+o.utensil+'</span></div>':'<div class="it uten"><span>餐具：唔使</span></div>';
+  const acts=isP?''
+    :o.status==='paid'?'<button class="b-mk" onclick="setStatus('+o.id+',\'making\')">開始製作</button><button class="b-dn" onclick="setStatus('+o.id+',\'done\')">完成</button>'
     :o.status==='making'?'<button class="b-bk" onclick="setStatus('+o.id+',\'paid\')">← 返回待處理</button><button class="b-dn" onclick="setStatus('+o.id+',\'done\')">完成</button>'
     :'<button class="b-bk" onclick="setStatus('+o.id+',\'making\')">← 返回製作中</button>';
+  const foot=isP
+    ?'<div class="ft"><div class="tot">$'+o.total+'</div><span class="cust">未付款 · 唔會出單</span></div>'
+    :'<div class="ft"><div class="tot">$'+o.total+'</div><span class="prn '+(o.printed_at?'y':'n')+'">'+(o.printed_at?'🖨 已印':'🖨 未印')+'</span><button class="b-rp" onclick="reprint('+o.id+')">重印</button>'+acts+'</div>';
   return '<div class="ord s-'+o.status+'"><div class="hd"><div class="no">'+esc(o.order_no)+'</div><span class="pill '+o.status+'">'+lab+'</span><div class="sp"></div>'+
-    '<div class="times">落單 '+hhmm(o.paid_at||o.created_at)+'<br>取餐 <b>'+esc(o.pickup_slot||'-')+'</b></div></div>'+
+    '<div class="times">落單 '+hhmm(o.paid_at||o.created_at)+'<br>取餐 <b'+(pk.far&&!isP?' style="color:var(--org)"':'')+'>'+esc(o.pickup_slot||'-')+'</b></div></div>'+
+    bigPk+
     '<div class="ph">📞 <a href="tel:'+esc(o.phone)+'">'+esc(o.phone)+'</a> '+vip+'</div>'+
-    '<div class="items">'+items+(o.utensil?'<div class="it"><span>外賣餐具 ×'+o.utensil+'</span><span>$'+o.utensil+'</span></div>':'')+'</div>'+
+    '<div class="items">'+items+uten+'</div>'+
     (o.note?'<div style="font-size:13px;color:var(--muted)">備註：'+esc(o.note)+'</div>':'')+
-    '<div class="ft"><div class="tot">$'+o.total+'</div>'+
-    '<span class="prn '+(o.printed_at?'y':'n')+'">'+(o.printed_at?'🖨 已印':'🖨 未印')+'</span>'+
-    '<button class="b-rp" onclick="reprint('+o.id+')">重印</button>'+acts+'</div></div>';
+    foot+'</div>';
+}
+function renderPending(){
+  const list=(ST.pending||[]).slice();
+  const bar='<div class="bar"><span class="count">未完成付款 <b style="color:var(--muted)">'+list.length+'</b> 張</span></div>';
+  const note='<div style="font-size:13px;color:var(--muted);margin:2px 4px 12px;line-height:1.6">呢度係「落咗單但未俾到錢」嘅單（缺咗嘅號碼多數喺呢度）。呢啲<b>唔會自動出單</b>；若客真係扣咗錢，要去 Wonder 後台跟。</div>';
+  if(!list.length)return bar+note+'<div class="empty">暫時冇未完成付款嘅單</div>';
+  let html='',lastDate=null;
+  list.forEach(function(o){
+    const dk=hkdate(o.created_at);
+    if(dk!==lastDate){html+='<div class="datesep">'+dayLabel(o.created_at)+'</div>';lastDate=dk;}
+    html+=orderCard(o);
+  });
+  return bar+note+html;
 }
 function renderOrders(){
   let list=ST.orders.slice();
