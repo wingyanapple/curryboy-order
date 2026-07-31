@@ -103,6 +103,7 @@ const API='https://kpjilykqswlogxhjmnwj.supabase.co/functions/v1/admin-api';
 let PW=localStorage.getItem('cb_admin_pw')||'';
 let ST={orders:[],counts:{},sort:'created',err:'',loading:false,tab:'orders',inv:{},slotClosed:{},stats:null,feedback:null};
 const MENU=[
+  ['套餐（賣晒可售罄）',[['curryrice','咖喱飯套餐'],['tsukemen','咖喱沾麵套餐'],['roti','咖喱薄餅套餐'],['soupnoodle','湯麵套餐']]],
   ['咖喱',[['c_butter','牛油咖喱'],['c_ghost','麻辣咖喱'],['c_king','黑椒咖喱'],['c_queen','小荳蔻咖喱']]],
   ['主菜',[['m_chicken','鼠尾草烤雞'],['m_brisket','白滷水牛腩'],['m_iberico','黑毛豬肉餅'],['m_miso','味噌燒茄子'],['m_tonkatsu','吉列薄豬扒'],['m_fish','吉列魚柳'],['m_chashu','炙燒叉燒']]],
   ['湯（湯麵用）',[['s_beef','牛骨湯'],['s_tomato','蕃茄湯'],['s_curry','湯咖喱']]],

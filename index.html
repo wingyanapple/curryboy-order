@@ -347,7 +347,7 @@ const Store={
   save(){try{localStorage.setItem('curryboy_mvp',JSON.stringify({orders:DB.orders,feedback:DB.feedback,slots:DB.slots,orderSeq:DB.orderSeq,inv:invSnapshot()}));}catch(e){}},
   load(){try{const r=localStorage.getItem('curryboy_mvp');if(!r)return null;return JSON.parse(r);}catch(e){return null;}}
 };
-function invSnapshot(){const m={};['curries','mains','soups','extras','snacks','drinks','sodas','donburi'].forEach(k=>{DB[k].forEach(o=>m[o.id]=o.status);});return m;}
+function invSnapshot(){const m={};['curries','mains','soups','extras','snacks','drinks','sodas','donburi','sets'].forEach(k=>{DB[k].forEach(o=>m[o.id]=o.status);});return m;}
 
 /* ---------- seed data ---------- */
 const DB={
@@ -444,7 +444,7 @@ function genSlots(){const a=[];for(let t=11*60;t<=20*60;t+=15){const h=Math.floo
 DB.slots=genSlots();
 
 /* restore persisted */
-(function(){const s=Store.load();if(s){DB.orders=s.orders||[];DB.feedback=s.feedback||[];if(s.slots&&s.slots.length)DB.slots=s.slots;DB.orderSeq=s.orderSeq||DB.orderSeq;if(s.inv){['curries','mains','soups','extras','snacks','drinks','sodas','donburi'].forEach(k=>DB[k].forEach(o=>{if(s.inv[o.id])o.status=s.inv[o.id];}));}}})();
+(function(){const s=Store.load();if(s){DB.orders=s.orders||[];DB.feedback=s.feedback||[];if(s.slots&&s.slots.length)DB.slots=s.slots;DB.orderSeq=s.orderSeq||DB.orderSeq;if(s.inv){['curries','mains','soups','extras','snacks','drinks','sodas','donburi','sets'].forEach(k=>DB[k].forEach(o=>{if(s.inv[o.id])o.status=s.inv[o.id];}));}}})();
 
 /* ---------- helpers ---------- */
 const $=id=>document.getElementById(id);
@@ -626,7 +626,7 @@ function viewHome(){
 }
 
 function viewMenu(){
-  const sets=DB.sets.map(s=>'<div class="setcard '+(s.kind==='soup'?'udon':'curry')+'" onclick="openBuild(\''+s.id+'\')"><div class="info"><div class="han">'+s.zh+'</div><div class="en">'+s.en+' · 全日供應</div></div><div class="pr">$'+s.price+'<small>起</small></div></div>').join('');
+  const sets=DB.sets.map(s=>{const so=s.status==='sold_out';return '<div class="setcard '+(s.kind==='soup'?'udon':'curry')+(so?' so':'')+'"'+(so?'':' onclick="openBuild(\''+s.id+'\')"')+'><div class="info"><div class="han">'+s.zh+(so?' <span class="so-tag">售罄</span>':'')+'</div><div class="en">'+s.en+' · 全日供應</div></div><div class="pr">$'+s.price+'<small>起</small></div></div>';}).join('');
   const dons=DB.donburi.map(d=>{const so=d.status!=='available';return '<div class="setcard udon'+(so?' so':'')+'"'+(so?'':' onclick="openDonburi(\''+d.id+'\')"')+'><div class="info"><div class="han">'+d.zh+(so?' <span class="so-tag">售罄</span>':'')+'</div><div class="en">'+d.en+'</div></div><div class="pr">$'+d.price+'</div></div>';}).join('');
   return appbar()+
     '<div class="sec-h"><span class="bar"></span><h2>全日套餐</h2><span class="en">ALL DAY SETS</span></div>'+sets+
@@ -982,7 +982,7 @@ async function syncStatus(){
     const rows=await r.json();
     if(Array.isArray(rows)){
       const m={};rows.forEach(x=>m[x.item_id]=x.status);
-      ['curries','mains','soups','extras','snacks','drinks','sodas','donburi'].forEach(cat=>{(DB[cat]||[]).forEach(o=>{o.status=m[o.id]||'available';});});
+      ['curries','mains','soups','extras','snacks','drinks','sodas','donburi','sets'].forEach(cat=>{(DB[cat]||[]).forEach(o=>{o.status=m[o.id]||'available';});});
     }
     const today=new Date().toLocaleDateString('en-CA',{timeZone:'Asia/Hong_Kong'});
     const rs=await fetch(CFG.SUPABASE_URL+'/rest/v1/cb_slot_closed?slot_date=eq.'+today+'&select=slot_time',{headers:h});
