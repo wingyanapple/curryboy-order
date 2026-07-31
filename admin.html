@@ -59,6 +59,9 @@
   .count{font-size:13px;color:var(--muted)}
   /* order card */
   .datesep{font-size:14px;font-weight:800;color:var(--ink);margin:18px 2px 10px;padding-bottom:7px;border-bottom:2px solid var(--org)}
+  .datesep.dtog{cursor:pointer;user-select:none;color:var(--muted);border-bottom-color:var(--line)}
+  .datesep .arw{display:inline-block;width:16px;color:var(--org);font-weight:900}
+  .datesep .dn{font-weight:700;font-size:12px;color:var(--muted)}
   .ord{background:var(--card);border:1px solid var(--line);border-left-width:5px;border-radius:13px;padding:14px;margin-bottom:12px}
   .ord.s-paid{border-left-color:var(--red)}
   .ord.s-making{border-left-color:var(--yel)}
@@ -150,7 +153,7 @@ function render(){
   }
   const tab=ST.tab||'orders';
   const top='<div class="top"><span class="logo">CurryBoy</span><div class="sp"></div><span class="st" id="clk"></span><button onclick="logout()">登出</button></div>';
-  const npd=(ST.pending||[]).length;
+  const npd=(ST.pending||[]).filter(function(o){return hkdate(o.created_at)===todayHK();}).length;
   const tabs='<div class="tabs">'+
     '<button class="'+(tab==='orders'?'on':'')+'" onclick="setTab(\'orders\')">訂單</button>'+
     '<button class="'+(tab==='pending'?'on':'')+'" onclick="setTab(\'pending\')">未完成'+(npd?'<i class="badge">'+npd+'</i>':'')+'</button>'+
@@ -162,11 +165,30 @@ function render(){
   root.innerHTML=top+tabs+'<div class="wrap">'+bodyHtml+'</div>';
   const clk=document.getElementById('clk');if(clk)clk.textContent='自動更新 · '+hhmm(new Date().toISOString());
 }
-function pickupInfo(slot){
+function todayHK(){return new Date().toLocaleDateString('en-CA',{timeZone:'Asia/Hong_Kong'});}
+function pickupInfo(slot,iso){
   const m=/(\d{1,2}):(\d{2})/.exec(slot||'');if(!m)return{mins:null,far:false};
-  const pm=(+m[1])*60+(+m[2]);const n=new Date();
-  const mins=pm-(n.getHours()*60+n.getMinutes());
+  // 用「訂單當日日期 + 取餐時間」做完整時間，先計返而家去到取餐仲有幾耐（唔會將琴日單當今日）
+  const dstr=iso?new Date(iso).toLocaleDateString('en-CA',{timeZone:'Asia/Hong_Kong'}):todayHK();
+  const pickup=new Date(dstr+'T'+String(m[1]).padStart(2,'0')+':'+m[2]+':00+08:00');
+  const mins=Math.round((pickup.getTime()-Date.now())/60000);
   return {mins:mins,far:mins>30};
+}
+function toggleDay(dk){ST.openDays=ST.openDays||{};ST.openDays[dk]=!ST.openDays[dk];render();}
+function groupDays(list,dateOf){
+  const today=todayHK();const groups=[],ix={};
+  list.forEach(function(o){var dk=hkdate(dateOf(o));if(!(dk in ix)){ix[dk]=groups.length;groups.push([dk,dateOf(o),[]]);}groups[ix[dk]][2].push(o);});
+  let html='';
+  groups.forEach(function(g){
+    var dk=g[0],iso=g[1],os=g[2],isToday=dk===today;
+    var open=isToday||(ST.openDays&&ST.openDays[dk]);
+    if(isToday){html+='<div class="datesep">'+dayLabel(iso)+'</div>'+os.map(orderCard).join('');}
+    else{
+      html+='<div class="datesep dtog" onclick="toggleDay(\''+dk+'\')"><span class="arw">'+(open?'▾':'▸')+'</span>'+dayLabel(iso)+' <span class="dn">('+os.length+' 張)</span></div>';
+      if(open)html+=os.map(orderCard).join('');
+    }
+  });
+  return html;
 }
 function orderCard(o){
   const isP=o.status==='pending';
@@ -175,7 +197,7 @@ function orderCard(o){
   const vc=ST.counts[o.phone]||0;
   const vs=(ST.spend||{})[o.phone]||0;
   const vip=vc>1?'<span class="vip">熟客 · 第'+vc+'次 · 累積 $'+vs+'</span>':'<span class="cust">第'+vc+'次 · 累積 $'+vs+'</span>';
-  const pk=pickupInfo(o.pickup_slot);
+  const pk=pickupInfo(o.pickup_slot,o.paid_at||o.created_at);
   const bigPk=(!isP&&pk.far)?'<div class="pk-far">取餐 '+esc(o.pickup_slot||'-')+' <span>'+pk.mins+' 分鐘後</span></div>':'';
   const uten=o.utensil?'<div class="it uten"><span>外賣餐具 ×'+o.utensil+'</span><span>$'+o.utensil+'</span></div>':'<div class="it uten"><span>餐具：唔使</span></div>';
   const acts=isP?''
@@ -195,16 +217,11 @@ function orderCard(o){
 }
 function renderPending(){
   const list=(ST.pending||[]).slice();
-  const bar='<div class="bar"><span class="count">未完成付款 <b style="color:var(--muted)">'+list.length+'</b> 張</span></div>';
-  const note='<div style="font-size:13px;color:var(--muted);margin:2px 4px 12px;line-height:1.6">呢度係「落咗單但未俾到錢」嘅單（缺咗嘅號碼多數喺呢度）。呢啲<b>唔會自動出單</b>；若客真係扣咗錢，要去 Wonder 後台跟。</div>';
+  const todayN=list.filter(function(o){return hkdate(o.created_at)===todayHK();}).length;
+  const bar='<div class="bar"><span class="count">今日未完成付款 <b style="color:var(--muted)">'+todayN+'</b> 張</span></div>';
+  const note='<div style="font-size:13px;color:var(--muted);margin:2px 4px 12px;line-height:1.6">呢度係「落咗單但未俾到錢」嘅單（缺咗嘅號碼多數喺呢度）。呢啲<b>唔會自動出單</b>；若客真係扣咗錢，要去 Wonder 後台跟。過往日子摺埋咗，撳日期可展開。</div>';
   if(!list.length)return bar+note+'<div class="empty">暫時冇未完成付款嘅單</div>';
-  let html='',lastDate=null;
-  list.forEach(function(o){
-    const dk=hkdate(o.created_at);
-    if(dk!==lastDate){html+='<div class="datesep">'+dayLabel(o.created_at)+'</div>';lastDate=dk;}
-    html+=orderCard(o);
-  });
-  return bar+note+html;
+  return bar+note+groupDays(list,function(o){return o.created_at;});
 }
 function renderOrders(){
   let list=ST.orders.slice();
@@ -213,13 +230,7 @@ function renderOrders(){
   const pending=list.filter(o=>o.status==='paid').length;
   const bar='<div class="bar"><span class="count">待處理 <b style="color:var(--red)">'+pending+'</b> 張</span><div class="sp" style="flex:1"></div><div class="seg"><button class="'+(ST.sort==='created'?'on':'')+'" onclick="setSort(\'created\')">落單順序</button><button class="'+(ST.sort==='pickup'?'on':'')+'" onclick="setSort(\'pickup\')">取餐時間</button></div></div>';
   if(!list.length)return bar+'<div class="empty">暫時未有訂單<br><span style="font-size:13px">有客付款後會即刻喺度出現</span></div>';
-  let html='',lastDate=null;
-  list.forEach(function(o){
-    const dk=hkdate(o.paid_at||o.created_at);
-    if(dk!==lastDate){html+='<div class="datesep">'+dayLabel(o.paid_at||o.created_at)+'</div>';lastDate=dk;}
-    html+=orderCard(o);
-  });
-  return bar+html;
+  return bar+groupDays(list,function(o){return o.paid_at||o.created_at;});
 }
 function renderInventory(){
   return '<div style="font-size:13px;color:var(--muted);margin:6px 4px 10px">㩒「設為售罄」→ 客人端即時見到灰、揀唔到；隨時可恢復。</div>'+MENU.map(function(g){
