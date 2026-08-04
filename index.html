@@ -89,6 +89,22 @@
   .addr-txt{font-size:13.5px;color:var(--cream2);display:flex;align-items:center;gap:8px;justify-content:center;margin-bottom:11px}
   .gmap{width:100%;height:200px;border:1px solid var(--line);border-radius:13px;display:block}
   .mapbtn{display:block;text-align:center;margin-top:11px;background:#16110b;border:1px solid var(--line);color:var(--gold);border-radius:11px;padding:12px;font-weight:800;text-decoration:none}
+  .mo-card{background:var(--card);border:1px solid var(--line);border-left:4px solid var(--orange);border-radius:12px;padding:13px 14px;margin-bottom:11px}
+  .mo-hd{display:flex;align-items:flex-start;gap:8px;margin-bottom:8px}
+  .mo-no{font-size:20px;font-weight:900;color:var(--cream2);letter-spacing:.5px}
+  .mo-pill{font-size:11px;font-weight:800;border-radius:20px;padding:3px 9px;background:var(--gold);color:#1a1208;white-space:nowrap}
+  .mo-pill.st-done{background:#2f9e56;color:#fff}.mo-pill.st-paid{background:var(--red);color:#fff}
+  .mo-time{font-size:11px;color:var(--muted);text-align:right;line-height:1.5;white-space:nowrap}
+  .mo-time b{color:var(--gold)}
+  .mo-items{border-top:1px dashed var(--line);border-bottom:1px dashed var(--line);padding:8px 0;font-size:14px;line-height:1.6}
+  .mo-it{display:flex;justify-content:space-between;gap:10px;color:var(--cream2)}
+  .mo-it small{display:block;color:var(--muted);font-size:12px;font-weight:400}
+  .mo-note{font-size:12.5px;color:var(--muted);margin-top:6px}
+  .mo-tot{text-align:right;font-weight:900;color:var(--gold);font-size:16px;margin-top:8px}
+  .mo-day{font-size:14px;font-weight:800;color:var(--cream2);margin:16px 0 10px;padding-bottom:6px;border-bottom:2px solid var(--orange)}
+  .mo-day.mo-tog{cursor:pointer;user-select:none;color:var(--muted);border-bottom-color:var(--line)}
+  .mo-day .arw{display:inline-block;width:16px;color:var(--orange);font-weight:900}
+  .mo-day .mo-n{font-weight:700;font-size:12px;color:var(--muted)}
 
   /* menu */
   .setcard{display:flex;align-items:center;gap:13px;margin:12px 16px 0;border-radius:16px;padding:14px;border:2px solid var(--line);position:relative}
@@ -589,11 +605,66 @@ function render(){
     case 'cart':a.innerHTML=viewCart();break;
     case 'checkout':a.innerHTML=viewCheckout();break;
     case 'success':a.innerHTML=viewSuccess();break;
+    case 'myorders':a.innerHTML=viewMyOrders();break;
     case 'feedback':a.innerHTML=viewFeedback();break;
     default:a.innerHTML=viewHome();
   }
 }
 function appbar(back){return '<div class="appbar"><button class="back" onclick="'+(back||"go('home')")+'">‹</button><div class="brand"></div><div class="lang">繁 <b>|EN</b></div></div>';}
+
+/* ===== 我的訂單（客人用電話查自己嘅單）===== */
+function esc(s){return (s==null?'':String(s)).replace(/[&<>"]/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c];});}
+function moTime(iso){try{return new Date(iso).toLocaleTimeString('zh-HK',{timeZone:'Asia/Hong_Kong',hour:'2-digit',minute:'2-digit',hour12:false});}catch(e){return '';}}
+function moDate(iso){try{return new Date(iso).toLocaleDateString('en-CA',{timeZone:'Asia/Hong_Kong'});}catch(e){return '';}}
+function moDayLabel(iso){var d=moDate(iso),t=moDate(new Date().toISOString()),y=moDate(new Date(Date.now()-864e5).toISOString());var pp=d.split('-');var nice=(pp[1]?+pp[1]:'')+'月'+(pp[2]?+pp[2]:'')+'日';return nice+(d===t?'（今日）':d===y?'（昨日）':'');}
+window.toggleMoDay=function(dk){S.myorders.open=S.myorders.open||{};S.myorders.open[dk]=!S.myorders.open[dk];render();};
+function myOrderCard(o){
+  var lab={paid:'已付款',making:'製作中',done:'已完成'}[o.status]||o.status;
+  var cls={paid:'st-paid',making:'st-making',done:'st-done'}[o.status]||'';
+  var items=(o.items||[]).map(function(i){return '<div class="mo-it"><span>'+esc(i.label)+(i.qty>1?' ×'+i.qty:'')+(i.item_desc?'<small>'+esc(i.item_desc)+'</small>':'')+(i.note?'<small>備註：'+esc(i.note)+'</small>':'')+'</span><span>$'+(i.unit*i.qty)+'</span></div>';}).join('');
+  return '<div class="mo-card"><div class="mo-hd"><div class="mo-no">'+esc(o.order_no)+'</div><span class="mo-pill '+cls+'">'+lab+'</span><div style="flex:1"></div><div class="mo-time">落單 '+moTime(o.paid_at||o.created_at)+'<br>取餐 <b>'+esc(o.pickup_slot||'-')+'</b></div></div>'+
+    '<div class="mo-items">'+items+(o.utensil?'<div class="mo-it"><span>外賣餐具 ×'+o.utensil+'</span><span>$'+o.utensil+'</span></div>':'')+'</div>'+
+    (o.note?'<div class="mo-note">整單備註：'+esc(o.note)+'</div>':'')+
+    '<div class="mo-tot">合計 $'+o.total+'</div></div>';
+}
+function renderMyOrderList(list){
+  var today=moDate(new Date().toISOString());var groups=[],ix={};
+  list.forEach(function(o){var dk=moDate(o.paid_at||o.created_at);if(!(dk in ix)){ix[dk]=groups.length;groups.push([dk,o.paid_at||o.created_at,[]]);}groups[ix[dk]][2].push(o);});
+  var html='';
+  groups.forEach(function(g){
+    var dk=g[0],iso=g[1],os=g[2],isToday=dk===today;
+    var open=isToday||(S.myorders.open&&S.myorders.open[dk]);
+    if(isToday){html+='<div class="mo-day">'+moDayLabel(iso)+'</div>'+os.map(myOrderCard).join('');}
+    else{html+='<div class="mo-day mo-tog" onclick="toggleMoDay(\''+dk+'\')"><span class="arw">'+(open?'▾':'▸')+'</span> '+moDayLabel(iso)+' <span class="mo-n">('+os.length+' 張)</span></div>';if(open)html+=os.map(myOrderCard).join('');}
+  });
+  return '<div style="padding:0 16px 24px">'+html+'</div>';
+}
+function viewMyOrders(){
+  S.myorders=S.myorders||{phone:'',orders:null,loading:false,err:'',open:{}};
+  var m=S.myorders;
+  var h=appbar("go('home')")+'<div class="sec-h"><span class="bar"></span><h2>我的訂單</h2><span class="en">MY ORDERS</span></div>';
+  h+='<div class="field" style="padding:0 16px"><div class="lab" style="margin-bottom:6px">輸入電話號碼，查你落過嘅訂單</div>'+
+    '<div style="display:flex;gap:8px"><input class="inp" id="moPhone" inputmode="numeric" maxlength="8" placeholder="香港 8 位電話" value="'+esc(m.phone)+'" style="flex:1" onkeydown="if(event.key===\'Enter\')queryMyOrders()">'+
+    '<button class="ladd" style="white-space:nowrap;padding:0 18px" onclick="queryMyOrders()">查詢</button></div>'+
+    (m.err?'<div class="err" style="margin-top:8px">'+esc(m.err)+'</div>':'')+'</div>';
+  if(m.loading)h+='<div class="empty" style="padding:40px">查緊…</div>';
+  else if(m.orders!==null){
+    if(!m.orders.length)h+='<div class="empty" style="padding:40px">呢個電話號碼冇搵到訂單</div>';
+    else h+=renderMyOrderList(m.orders);
+  }
+  return h;
+}
+window.queryMyOrders=async function(){
+  var el=document.getElementById('moPhone');var phone=(el?el.value:'').replace(/\D/g,'');
+  S.myorders=S.myorders||{open:{}};
+  if(!/^[2-9]\d{7}$/.test(phone)){S.myorders.err='請輸入正確嘅香港 8 位電話';render();return;}
+  S.myorders.phone=phone;S.myorders.err='';S.myorders.loading=true;S.myorders.orders=null;S.myorders.open={};render();
+  try{
+    var r=await fetch(CFG.SUPABASE_URL+'/rest/v1/rpc/cb_orders_by_phone',{method:'POST',headers:{'Content-Type':'application/json',apikey:CFG.ANON,Authorization:'Bearer '+CFG.ANON},body:JSON.stringify({p_phone:phone})});
+    var d=await r.json();S.myorders.orders=Array.isArray(d)?d:[];
+  }catch(e){S.myorders.orders=[];S.myorders.err='查詢失敗，請再試';}
+  S.myorders.loading=false;render();
+};
 
 const IMG_BASE='https://kpjilykqswlogxhjmnwj.supabase.co/storage/v1/object/public/site/';
 const CURRY_PIC={c_butter:IMG_BASE+'curry-butter.png',c_ghost:IMG_BASE+'curry-ghost.png',c_king:IMG_BASE+'curry-king.png',c_queen:IMG_BASE+'curry-queen.png'};
@@ -612,6 +683,7 @@ function viewHome(){
   return '<div id="home">'+
     '<div class="home-hero"><div class="hero-top"><div class="hero-logo"></div><div class="hero-sub">預先落單 · 到店自取</div></div>'+
     '<div class="hero-mid"><button class="big-start" onclick="go(\'menu\')">開始點餐<span>START ORDER</span></button>'+
+    '<button class="fb-btn" onclick="go(\'myorders\')">我的訂單　MY ORDERS</button>'+
     '<button class="fb-btn" onclick="go(\'feedback\')">意見回饋　FEEDBACK</button>'+an+'</div>'+
     '<div class="scrollhint">向下了解更多 ▾</div></div>'+
     '<div class="sec-h"><span class="bar"></span><h2>餐廳位置</h2><span class="en">OUR LOCATION</span></div>'+
