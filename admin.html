@@ -193,7 +193,7 @@ function groupDays(list,dateOf){
 }
 function orderCard(o){
   const isP=o.status==='pending';
-  const lab={paid:'待處理',making:'製作中',done:'已完成',pending:'未完成付款'}[o.status]||o.status;
+  const lab={paid:'已付款',making:'製作中',done:'已完成',pending:'未完成付款'}[o.status]||o.status;
   const items=(o.cb_order_items||[]).map(i=>'<div class="it"><span>'+esc(i.label)+(i.qty>1?' ×'+i.qty:'')+(i.item_desc?'<small>'+esc(i.item_desc)+'</small>':'')+'</span><span>$'+(i.unit*i.qty)+'</span></div>').join('')||'<div class="it"><small>（無明細）</small></div>';
   const vc=ST.counts[o.phone]||0;
   const vs=(ST.spend||{})[o.phone]||0;
