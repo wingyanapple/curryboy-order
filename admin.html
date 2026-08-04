@@ -201,13 +201,9 @@ function orderCard(o){
   const pk=pickupInfo(o.pickup_slot,o.paid_at||o.created_at);
   const bigPk=(!isP&&pk.far)?'<div class="pk-far">取餐 '+esc(o.pickup_slot||'-')+' <span>'+pk.mins+' 分鐘後</span></div>':'';
   const uten=o.utensil?'<div class="it uten"><span>外賣餐具 ×'+o.utensil+'</span><span>$'+o.utensil+'</span></div>':'<div class="it uten"><span>餐具：唔使</span></div>';
-  const acts=isP?''
-    :o.status==='paid'?'<button class="b-mk" onclick="setStatus('+o.id+',\'making\')">開始製作</button><button class="b-dn" onclick="setStatus('+o.id+',\'done\')">完成</button>'
-    :o.status==='making'?'<button class="b-bk" onclick="setStatus('+o.id+',\'paid\')">← 返回待處理</button><button class="b-dn" onclick="setStatus('+o.id+',\'done\')">完成</button>'
-    :'<button class="b-bk" onclick="setStatus('+o.id+',\'making\')">← 返回製作中</button>';
   const foot=isP
     ?'<div class="ft"><div class="tot">$'+o.total+'</div><span class="cust">未付款 · 唔會出單</span></div>'
-    :'<div class="ft"><div class="tot">$'+o.total+'</div><span class="prn '+(o.printed_at?'y':'n')+'">'+(o.printed_at?'🖨 已印':'🖨 未印')+'</span><button class="b-rp" onclick="reprint('+o.id+')">重印</button>'+acts+'</div>';
+    :'<div class="ft"><div class="tot">$'+o.total+'</div><span class="prn '+(o.printed_at?'y':'n')+'">'+(o.printed_at?'🖨 已印':'🖨 未印')+'</span><button class="b-rp" onclick="reprint('+o.id+')">重印</button></div>';
   return '<div class="ord s-'+o.status+'"><div class="hd"><div class="no">'+esc(o.order_no)+'</div><span class="pill '+o.status+'">'+lab+'</span><div class="sp"></div>'+
     '<div class="times">落單 '+hhmm(o.paid_at||o.created_at)+'<br>取餐 <b'+(pk.far&&!isP?' style="color:var(--org)"':'')+'>'+esc(o.pickup_slot||'-')+'</b></div></div>'+
     bigPk+
@@ -228,8 +224,8 @@ function renderOrders(){
   let list=ST.orders.slice();
   if(ST.sort==='pickup')list.sort((a,b)=>String(a.pickup_slot||'').localeCompare(String(b.pickup_slot||'')));
   else list.sort((a,b)=>String(b.created_at).localeCompare(String(a.created_at)));
-  const pending=list.filter(o=>o.status==='paid').length;
-  const bar='<div class="bar"><span class="count">待處理 <b style="color:var(--red)">'+pending+'</b> 張</span><div class="sp" style="flex:1"></div><div class="seg"><button class="'+(ST.sort==='created'?'on':'')+'" onclick="setSort(\'created\')">落單順序</button><button class="'+(ST.sort==='pickup'?'on':'')+'" onclick="setSort(\'pickup\')">取餐時間</button></div></div>';
+  const todayCnt=list.filter(o=>hkdate(o.paid_at||o.created_at)===todayHK()).length;
+  const bar='<div class="bar"><span class="count">今日 <b style="color:var(--org)">'+todayCnt+'</b> 張</span><div class="sp" style="flex:1"></div><div class="seg"><button class="'+(ST.sort==='created'?'on':'')+'" onclick="setSort(\'created\')">落單順序</button><button class="'+(ST.sort==='pickup'?'on':'')+'" onclick="setSort(\'pickup\')">取餐時間</button></div></div>';
   if(!list.length)return bar+'<div class="empty">暫時未有訂單<br><span style="font-size:13px">有客付款後會即刻喺度出現</span></div>';
   return bar+groupDays(list,function(o){return o.paid_at||o.created_at;});
 }
@@ -253,9 +249,7 @@ function renderStats(){
   const t=s.today||{};
   const kpi='<div class="kpis">'+
     '<div class="kpi"><div class="kv" style="color:var(--org)">$'+(t.revenue||0)+'</div><div class="kl">今日營業額</div></div>'+
-    '<div class="kpi"><div class="kv">'+(t.orders||0)+'</div><div class="kl">今日訂單</div></div>'+
-    '<div class="kpi"><div class="kv" style="color:var(--red)">'+(t.pending||0)+'</div><div class="kl">待處理</div></div>'+
-    '<div class="kpi"><div class="kv" style="color:var(--grn)">'+(t.done||0)+'</div><div class="kl">已完成</div></div></div>';
+    '<div class="kpi"><div class="kv">'+(t.orders||0)+'</div><div class="kl">今日訂單</div></div></div>';
   const days=(s.days||[]).map(function(d){return '<div class="srow"><span>'+dayLabel(d.d+'T12:00:00+08:00')+'</span><span class="sc">'+d.orders+' 單</span><span class="sr">$'+d.revenue+'</span></div>';}).join('')||'<div class="srow"><small>未有記錄</small></div>';
   const months=(s.months||[]).map(function(m){return '<div class="srow mrow"><span>'+monthNice(m.m)+'</span><span class="sc">'+m.orders+' 單</span><span class="sr">$'+m.revenue+'</span></div>';}).join('')||'<div class="srow"><small>未有記錄</small></div>';
   return kpi+'<h3 class="sh">每日流水</h3>'+days+'<h3 class="sh">月結（逐月流水）</h3>'+months+'<div style="height:20px"></div>';
