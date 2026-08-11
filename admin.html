@@ -70,6 +70,7 @@
   .ord .no{font-size:22px;font-weight:900;letter-spacing:1px}
   .pill{font-size:12px;font-weight:800;border-radius:20px;padding:3px 10px;color:#fff}
   .pill.paid{background:var(--red)}.pill.making{background:var(--yel)}.pill.done{background:var(--grn)}
+  .otag{font-size:13px;font-weight:900;border-radius:8px;padding:3px 10px;color:#fff;margin-left:6px}
   .ord .sp{flex:1}
   .ord .times{font-size:12px;color:var(--muted);text-align:right;line-height:1.5}
   .ord .items{border-top:1px dashed var(--line);border-bottom:1px dashed var(--line);padding:9px 0;margin:8px 0;font-size:14px;line-height:1.7}
@@ -200,11 +201,12 @@ function orderCard(o){
   const vip=vc>1?'<span class="vip">熟客 · 第'+vc+'次 · 累積 $'+vs+'</span>':'<span class="cust">第'+vc+'次 · 累積 $'+vs+'</span>';
   const pk=pickupInfo(o.pickup_slot,o.paid_at||o.created_at);
   const bigPk=(!isP&&pk.far)?'<div class="pk-far">取餐 '+esc(o.pickup_slot||'-')+' <span>'+pk.mins+' 分鐘後</span></div>':'';
-  const uten=o.utensil?'<div class="it uten"><span>外賣餐具 ×'+o.utensil+'</span><span>$'+o.utensil+'</span></div>':'<div class="it uten"><span>餐具：唔使</span></div>';
+  const uten=o.utensil?'<div class="it uten"><span>餐具 ×'+o.utensil+'</span><span>$'+o.utensil+'</span></div>':'<div class="it uten"><span>餐具：唔使</span></div>';
+  const ot=o.order_type?'<span class="otag" style="background:'+(o.order_type==='堂食'?'#2f9e56':'#e8843a')+'">'+esc(o.order_type)+'</span>':'';
   const foot=isP
     ?'<div class="ft"><div class="tot">$'+o.total+'</div><span class="cust">未付款 · 唔會出單</span></div>'
     :'<div class="ft"><div class="tot">$'+o.total+'</div><span class="prn '+(o.printed_at?'y':'n')+'">'+(o.printed_at?'🖨 已印':'🖨 未印')+'</span><button class="b-rp" onclick="reprint('+o.id+')">重印</button></div>';
-  return '<div class="ord s-'+o.status+'"><div class="hd"><div class="no">'+esc(o.order_no)+'</div><span class="pill '+o.status+'">'+lab+'</span><div class="sp"></div>'+
+  return '<div class="ord s-'+o.status+'"><div class="hd"><div class="no">'+esc(o.order_no)+'</div><span class="pill '+o.status+'">'+lab+'</span>'+ot+'<div class="sp"></div>'+
     '<div class="times">落單 '+hhmm(o.paid_at||o.created_at)+'<br>取餐 <b'+(pk.far&&!isP?' style="color:var(--org)"':'')+'>'+esc(o.pickup_slot||'-')+'</b></div></div>'+
     bigPk+
     '<div class="ph">📞 <a href="tel:'+esc(o.phone)+'">'+esc(o.phone)+'</a> '+vip+'</div>'+

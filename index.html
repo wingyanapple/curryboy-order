@@ -489,7 +489,7 @@ const CFG={
   ANON:'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImtwamlseWtxc3dsb2d4aGptbndqIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODE1MzY4NzMsImV4cCI6MjA5NzExMjg3M30.g0N_XXCscwwxIzjRtsX3x4WthhedOebYlj6NrbvOjzs',
   get FN_URL(){return this.SUPABASE_URL+'/functions/v1/create-payment-link';}
 };
-let S={screen:'home', cart:[], build:null, checkout:{utensil:null,slot:null,phoneErr:'',err:''}, paying:false,
+let S={screen:'home', cart:[], build:null, checkout:{otype:null,utensil:null,slot:null,phoneErr:'',err:''}, paying:false,
         admin:{logged:false,tab:'orders',orderSort:'created',rep:{mode:'today',day:null,month:''}}, fb:{type:'食物評價',rating:5}};
 
 /* ---------- BUILD logic ---------- */
@@ -565,7 +565,8 @@ function addDrink(id,opts){const p=find('drinks',id);const note=opts.join(' ');
 async function payReal(){
   const c=S.checkout;c.err='';c.phoneErr='';
   const phone=($('phoneInput')?$('phoneInput').value:'').replace(/\s/g,'');
-  if(c.utensil===null){c.err='請先揀外賣餐具（不需要或份數）';render();return;}
+  if(c.otype===null){c.err='請先揀用餐方式（堂食或外賣）';render();return;}
+  if(c.utensil===null){c.err='請先揀餐具（不需要或份數）';render();return;}
   if(c.slot===null){c.err='請揀取餐時間';render();return;}
   if(!/^[2-9]\d{7}$/.test(phone)){c.phoneErr='請輸入有效嘅 8 位香港電話號碼';render();return;}
   const slot=DB.slots.find(s=>s.time===c.slot);
@@ -578,7 +579,7 @@ async function payReal(){
   try{
     const resp=await fetch(CFG.FN_URL,{method:'POST',
       headers:{'Content-Type':'application/json','apikey':CFG.ANON,'Authorization':'Bearer '+CFG.ANON},
-      body:JSON.stringify({phone,pickup_slot:c.slot,utensil,total,items,return_base:location.origin+location.pathname})});
+      body:JSON.stringify({phone,pickup_slot:c.slot,utensil,order_type:c.otype,total,items,return_base:location.origin+location.pathname})});
     const data=await resp.json().catch(()=>({}));
     if(data&&data.ok&&data.payment_link){
       window.location.href=data.payment_link;return;   // 跳去 Wonder 俾錢（購物車保留，成功返嚟先清）
@@ -819,8 +820,13 @@ function viewCheckout(){
     const dis=st!=='available';return '<div class="slot '+(dis?'full':'')+' '+(on?'on':'')+'" '+(dis?'':'onclick="pickSlot(\''+s.time+'\')"')+'>'+s.time+(st==='full'?'<small>已滿</small>':(st==='past'?'<small>已過</small>':''))+'</div>';}).join('');
   const total=cartTotal()+(c.utensil||0)*DB.utensilPrice;
   const uNone=c.utensil===0, uHas=c.utensil>0;
+  const isDine=c.otype==='堂食', isTake=c.otype==='外賣';
   return appbar("go('cart')")+'<div class="b-title">結帳 <em>CHECKOUT</em></div>'+
-    '<div class="field"><div class="lab">外賣餐具 <span class="req">必選</span></div><div class="util2">'+
+    '<div class="field"><div class="lab">用餐方式 <span class="req">必選</span></div><div class="util2">'+
+      '<button class="uchip '+(isDine?'on':'')+'" onclick="setOtype(\'堂食\')">堂食</button>'+
+      '<button class="uchip '+(isTake?'on':'')+'" onclick="setOtype(\'外賣\')">外賣</button>'+
+    '</div></div>'+
+    '<div class="field"><div class="lab">餐具 <span class="req">必選</span></div><div class="util2">'+
       '<button class="uchip '+(uNone?'on':'')+'" onclick="setUtensil(0)">不需要</button>'+
       '<div class="ustep '+(uHas?'on':'')+'"><span class="w">需要</span><button onclick="setUtensil(Math.max(1,(S.checkout.utensil||0)-1))">−</button><b>'+(uHas?c.utensil:0)+'</b><button onclick="setUtensil((S.checkout.utensil||0)+1)">＋</button><small>$1/份</small></div>'+
     '</div></div>'+
@@ -832,6 +838,7 @@ function viewCheckout(){
 }
 window.pickSlot=t=>{S.checkout.slot=t;S.checkout.err='';render();};
 window.setUtensil=n=>{S.checkout.utensil=n;render();};
+window.setOtype=t=>{S.checkout.otype=t;S.checkout.err='';render();};
 
 function viewSuccess(){
   const o=S.lastOrder;
