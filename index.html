@@ -258,7 +258,7 @@
   .ustep b{font-size:16px;color:var(--gold)}.ustep small{margin-left:auto;color:var(--muted);font-size:11px}
   .hint{font-size:12px;color:var(--muted);margin-top:8px;line-height:1.5}
   .errline{color:#ff8a8a;font-size:13px;padding:4px 16px;font-weight:600}
-  .cta-wrap{position:sticky;bottom:0;padding:14px 16px;background:linear-gradient(0deg,var(--bg) 72%,transparent)}
+  .cta-wrap{position:static;padding:14px 16px 26px;background:var(--bg)}
   .pay{display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;color:var(--cream2)}
   .pay b{font-weight:700}.pay .v{font-family:var(--pixel);color:var(--gold);font-size:18px}
   .promo-sum{margin-bottom:10px;border:1px solid #3a2a14;border-radius:12px;padding:10px 14px;background:#160f0a}
@@ -820,7 +820,13 @@ function viewCart(){
       '<div class="cr"><div class="acts"><div class="qty"><button onclick="cartQty('+idx+',-1)">−</button><b>'+it.qty+'</b><button onclick="cartQty('+idx+',1)">＋</button></div>'+editBtn+'<button class="del" onclick="cartDel('+idx+')">刪除</button></div><div class="price">$'+(it.unit*it.qty)+'</div></div></div>';
   }).join('');
   return appbar("go('menu')")+'<div class="b-title">購物車 <em>CART</em></div>'+items+
-    '<div class="cta-wrap"><div class="pay"><b>小計</b><span class="v">$'+cartTotal()+'</span></div><button class="cta" onclick="go(\'checkout\')">前往結帳　CHECKOUT</button></div>';
+    '<div class="cta-wrap">'+
+      (promoOn()
+        ? '<div class="promo-sum"><div class="pr-row"><span>原價</span><span>$'+cartTotal()+'</span></div>'+
+          '<div class="pr-row disc"><span>全單9折優惠</span><span>−$'+(cartTotal()-promoFinal(cartTotal()))+'</span></div>'+
+          '<div class="pr-row fin"><span>小計</span><span>$'+promoFinal(cartTotal())+'</span></div></div>'
+        : '<div class="pay"><b>小計</b><span class="v">$'+cartTotal()+'</span></div>')+
+      '<button class="cta" onclick="go(\'checkout\')">前往結帳　CHECKOUT</button></div>';
 }
 window.cartQty=(i,d)=>{S.cart[i].qty=Math.max(1,S.cart[i].qty+d);Store.save();render();};
 window.cartDel=i=>{S.cart.splice(i,1);render();};
