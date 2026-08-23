@@ -261,6 +261,11 @@
   .cta-wrap{position:sticky;bottom:0;padding:14px 16px;background:linear-gradient(0deg,var(--bg) 72%,transparent)}
   .pay{display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;color:var(--cream2)}
   .pay b{font-weight:700}.pay .v{font-family:var(--pixel);color:var(--gold);font-size:18px}
+  .promo-sum{margin-bottom:10px;border:1px solid #3a2a14;border-radius:12px;padding:10px 14px;background:#160f0a}
+  .promo-sum .pr-row{display:flex;justify-content:space-between;align-items:center;color:var(--cream2);font-weight:700;padding:3px 0}
+  .promo-sum .pr-row.disc{color:var(--orange)}
+  .promo-sum .pr-row.fin{border-top:1px dashed #3a2a14;margin-top:4px;padding-top:8px;font-size:16px}
+  .promo-sum .pr-row.fin span:last-child{font-family:var(--pixel);color:var(--gold);font-size:20px}
   .cta{display:block;width:100%;text-align:center;font-family:var(--pixel);font-size:12px;color:#1a1208;background:var(--orange);border:none;border-radius:13px;padding:16px;box-shadow:4px 4px 0 #000}
   .cta:disabled{opacity:.45;box-shadow:none}
 
@@ -552,6 +557,11 @@ function addBuildToCart(){
 
 /* ---------- cart ---------- */
 function cartTotal(){return S.cart.reduce((s,i)=>s+i.unit*i.qty,0);}
+/* 全單9折優惠：香港時間 2026-10-31 尾（即 2026-11-01 00:00 +08:00）之前有效。
+   用絕對時間界線，前後端一致；折後公式同後端 create-payment-link 一致：round(原價×0.9)。*/
+var PROMO_RATE=0.9, PROMO_UNTIL=Date.parse('2026-11-01T00:00:00+08:00');
+function promoOn(){return Date.now()<PROMO_UNTIL;}
+function promoFinal(orig){return Math.round(orig*PROMO_RATE);}
 function cartPortions(){return S.cart.reduce((s,i)=>s+i.qty,0);}
 function addSimple(arr,id){const p=find(arr,id);if(p.status!=='available'){toast('已售罄');return;}
   const ex=S.cart.find(i=>i.type==='item'&&i.pid===id&&!i.note);
@@ -672,8 +682,9 @@ const CURRY_PIC={c_butter:IMG_BASE+'curry-butter.png',c_ghost:IMG_BASE+'curry-gh
 window.openCurryPic=id=>{const pic=CURRY_PIC[id];if(!pic)return;$('overlay').innerHTML='<div class="modal-bg" onclick="closeCurryPic()"><img class="cpic-full" src="'+pic+'" alt=""></div>';};
 window.closeCurryPic=()=>{$('overlay').innerHTML='';};
 function viewHome(){
-  const an=DB.announcement.visible&&DB.announcement.text?
-    '<div class="announce"><div class="an-tag"><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="#e8951e" stroke-width="2.5"><path d="M3 11l15-6v14L3 13zM18 8a3 3 0 0 1 0 6"/></svg> 公告 NOTICE</div><div class="an-body">'+DB.announcement.text+'</div></div>':'';
+  const anText=promoOn()?'多謝大家嘅體諒同支持！即日起至10月31日全單9折！〔優惠價格將會於結帳時顯示〕':DB.announcement.text;
+  const an=DB.announcement.visible&&anText?
+    '<div class="announce"><div class="an-tag"><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="#e8951e" stroke-width="2.5"><path d="M3 11l15-6v14L3 13zM18 8a3 3 0 0 1 0 6"/></svg> 公告 NOTICE</div><div class="an-body">'+anText+'</div></div>':'';
   const cards=DB.curries.map(c=>{
     const pic=CURRY_PIC[c.id]||'';
     const tag=c.status==='coming'?'<div class="coming">即將推出</div>':(c.status==='sold_out'?'<div class="coming" style="color:#ff8a8a;border-color:#ff8a8a;background:#241010">售罄</div>':'');
@@ -834,7 +845,13 @@ function viewCheckout(){
     '<div class="field"><div class="lab">聯絡電話 <span class="req">必填</span></div><input id="phoneInput" class="inp" inputmode="numeric" placeholder="9123 4567" value="'+(c.phone||'')+'" oninput="S.checkout.phone=this.value">'+
       (c.phoneErr?'<div class="errline">'+c.phoneErr+'</div>':'<div class="hint">如餐點缺貨或有任何疑問，我們將會聯絡您。</div>')+'</div>'+
     (c.err?'<div class="errline">'+c.err+'</div>':'')+
-    '<div class="cta-wrap"><button class="cont-btn" onclick="go(\'menu\')">＋ 繼續落單（再揀多個餐）</button><div class="pay"><b>合計</b><span class="v">$'+total+'</span></div><button class="cta" '+(S.paying?'disabled style="opacity:.6"':'onclick="payReal()"')+'>'+(S.paying?'處理中…':'確認付款　PAY')+'</button><div style="text-align:center;color:var(--muted);font-size:11px;margin-top:8px">㩒付款會跳去 Wonder 安全付款頁</div></div>';
+    '<div class="cta-wrap"><button class="cont-btn" onclick="go(\'menu\')">＋ 繼續落單（再揀多個餐）</button>'+
+      (promoOn()
+        ? '<div class="promo-sum"><div class="pr-row"><span>原價</span><span>$'+total+'</span></div>'+
+          '<div class="pr-row disc"><span>全單9折優惠</span><span>−$'+(total-promoFinal(total))+'</span></div>'+
+          '<div class="pr-row fin"><span>應付</span><span>$'+promoFinal(total)+'</span></div></div>'
+        : '<div class="pay"><b>合計</b><span class="v">$'+total+'</span></div>')+
+      '<button class="cta" '+(S.paying?'disabled style="opacity:.6"':'onclick="payReal()"')+'>'+(S.paying?'處理中…':'確認付款　PAY')+'</button><div style="text-align:center;color:var(--muted);font-size:11px;margin-top:8px">㩒付款會跳去 Wonder 安全付款頁</div></div>';
 }
 window.pickSlot=t=>{S.checkout.slot=t;S.checkout.err='';render();};
 window.setUtensil=n=>{S.checkout.utensil=n;render();};
