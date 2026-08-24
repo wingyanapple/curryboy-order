@@ -268,6 +268,12 @@
   .promo-sum .pr-row.fin span:last-child{font-family:var(--pixel);color:var(--gold);font-size:20px}
   .cta{display:block;width:100%;text-align:center;font-family:var(--pixel);font-size:12px;color:#1a1208;background:var(--orange);border:none;border-radius:13px;padding:16px;box-shadow:4px 4px 0 #000}
   .cta:disabled{opacity:.45;box-shadow:none}
+  .fbmodal-bg{position:fixed;inset:0;background:rgba(0,0,0,.74);display:flex;align-items:center;justify-content:center;z-index:9999;padding:26px}
+  .fbmodal{position:relative;width:100%;max-width:340px;background:#160f0a;border:1px solid var(--line);border-radius:16px;padding:30px 20px 20px;box-shadow:0 12px 44px rgba(0,0,0,.55)}
+  .fbmodal-x{position:absolute;top:9px;right:9px;width:32px;height:32px;border:none;border-radius:50%;background:rgba(255,255,255,.09);color:var(--cream2);font-size:15px;line-height:1}
+  .fbmodal-msg{color:var(--cream2);font-size:15px;line-height:1.75;font-weight:600;text-align:left}
+  .fbmodal .inp{margin-top:15px}
+  .fbmodal .cta{margin-top:12px}
 
   /* success */
   .done{padding:46px 24px;text-align:center;min-height:90vh;display:flex;flex-direction:column;align-items:center}
@@ -888,9 +894,44 @@ function viewFeedback(){
     '<div class="grp-cap">內容</div><div class="field" style="padding-top:4px"><textarea id="fbMsg" class="inp" rows="5" style="resize:none"></textarea></div>'+
     '<div class="cta-wrap"><button class="cta" onclick="submitFb()">提交意見　SUBMIT</button></div>';
 }
-window.submitFb=async()=>{const msg=($('fbMsg')?$('fbMsg').value:'').trim();
-  try{await fetch(CFG.SUPABASE_URL+'/rest/v1/cb_feedback',{method:'POST',headers:{'Content-Type':'application/json',apikey:CFG.ANON,Authorization:'Bearer '+CFG.ANON,Prefer:'return=minimal'},body:JSON.stringify({type:S.fb.type,rating:S.fb.rating,message:msg})});}catch(e){}
-  S.fb={type:'食物評價',rating:5};toast('多謝你嘅意見！');go('menu');};
+async function postFeedback(rec){
+  try{await fetch(CFG.SUPABASE_URL+'/rest/v1/cb_feedback',{method:'POST',headers:{'Content-Type':'application/json',apikey:CFG.ANON,Authorization:'Bearer '+CFG.ANON,Prefer:'return=minimal'},body:JSON.stringify(rec)});}catch(e){}
+}
+function fbThankMsg(r){
+  if(r>=5)return '多謝你嘅支持呀！我哋會繼續努力做好食嘅食物！';
+  if(r>=3)return '多謝支持，我哋會繼續努力，定期檢討改善出餐質素！你嘅意見對我哋好重要，希望你俾多次機會CurryBoy～';
+  return '多謝你支持我哋，好抱歉令到你有唔好嘅用餐體驗，我哋一定會作出檢討同埋改善，希望你俾多次機會CurryBoy！請留下聯絡方式，我哋會聯絡你作出跟進。';
+}
+/* 撳提交：3星以上即刻存好+彈多謝窗；1-2星唔即刻存，彈窗俾佢留電話（可留可唔留），
+   撳彈窗個「提交」先連電話一齊存，若直接撳交叉都會存（冇電話），唔會漏咗個投訴。
+   （cb_feedback anon 只准 INSERT、唔准 UPDATE，所以電話要連埋一次過 insert。）*/
+window.submitFb=async()=>{
+  const msg=($('fbMsg')?$('fbMsg').value:'').trim();
+  S.fbPending={type:S.fb.type,rating:S.fb.rating,message:msg}; S.fbSaved=false;
+  if(S.fb.rating>=3){ await postFeedback({type:S.fb.type,rating:S.fb.rating,message:msg,phone:null}); S.fbSaved=true; }
+  showFbModal(S.fb.rating);
+};
+function showFbModal(r){
+  const low=r<=2;
+  const box='<div class="fbmodal-bg" id="fbmodalbg"><div class="fbmodal">'+
+    '<button class="fbmodal-x" onclick="closeFbModal()">✕</button>'+
+    '<div class="fbmodal-msg">'+fbThankMsg(r)+'</div>'+
+    (low?'<input id="fbPhone" class="inp" inputmode="numeric" placeholder="聯絡電話（可留可唔留）">'+
+         '<button class="cta" onclick="submitFbPhone()">提交　SUBMIT</button>':'')+
+    '</div></div>';
+  const d=document.createElement('div'); d.innerHTML=box; document.body.appendChild(d.firstChild);
+}
+function removeFbModal(){const bg=$('fbmodalbg'); if(bg&&bg.parentNode)bg.parentNode.removeChild(bg);}
+function resetFb(){S.fb={type:'食物評價',rating:5}; S.fbPending=null;}
+window.submitFbPhone=async()=>{
+  const ph=($('fbPhone')?$('fbPhone').value:'').replace(/\s/g,'').trim();
+  if(!S.fbSaved&&S.fbPending){ await postFeedback(Object.assign({},S.fbPending,{phone:ph||null})); S.fbSaved=true; }
+  removeFbModal(); resetFb(); toast('多謝你，我哋會盡快聯絡你！'); go('menu');
+};
+window.closeFbModal=async()=>{
+  if(!S.fbSaved&&S.fbPending){ await postFeedback(Object.assign({},S.fbPending,{phone:null})); S.fbSaved=true; }
+  removeFbModal(); resetFb(); toast('多謝你嘅意見！'); go('menu');
+};
 
 /* ============ ADMIN ============ */
 function viewAdmin(){
