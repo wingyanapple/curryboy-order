@@ -247,6 +247,7 @@
   .slot{text-align:center;font-weight:700;font-size:13px;padding:11px 0;border-radius:9px;border:1px solid var(--line);background:#100b07;color:var(--cream2)}
   .slot.on{background:var(--orange);color:#1a1208;border-color:var(--orange)}
   .slot.full{color:var(--soldout);background:#0c0805;text-decoration:line-through;pointer-events:none}
+  .slot.now{border-color:var(--orange)}
   .slot small{display:block;font-size:9px;font-weight:500;color:#ff8a8a;text-decoration:none;margin-top:2px}
   .util2{display:flex;gap:9px}
   .uchip{flex:none;padding:0 16px;height:50px;border-radius:11px;border:1.5px solid var(--line);background:#100b07;color:var(--cream2);font-weight:700;font-size:14px}
@@ -846,7 +847,8 @@ window.cartDel=i=>{S.cart.splice(i,1);render();};
 
 function viewCheckout(){
   const c=S.checkout;
-  const slots=DB.slots.map(s=>{const st=slotStatus(s);const on=c.slot===s.time;
+  const nowChip='<div class="slot now'+(c.slot==='即時'?' on':'')+'" onclick="pickSlot(\'即時\')">即時</div>';
+  const slots=nowChip+DB.slots.map(s=>{const st=slotStatus(s);const on=c.slot===s.time;
     const dis=st!=='available';return '<div class="slot '+(dis?'full':'')+' '+(on?'on':'')+'" '+(dis?'':'onclick="pickSlot(\''+s.time+'\')"')+'>'+s.time+(st==='full'?'<small>已滿</small>':(st==='past'?'<small>已過</small>':''))+'</div>';}).join('');
   const total=cartTotal()+(c.utensil||0)*DB.utensilPrice;
   const uNone=c.utensil===0, uHas=c.utensil>0;
