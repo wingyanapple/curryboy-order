@@ -374,7 +374,7 @@ const Store={
   save(){try{localStorage.setItem('curryboy_mvp',JSON.stringify({orders:DB.orders,feedback:DB.feedback,slots:DB.slots,orderSeq:DB.orderSeq,inv:invSnapshot()}));}catch(e){}},
   load(){try{const r=localStorage.getItem('curryboy_mvp');if(!r)return null;return JSON.parse(r);}catch(e){return null;}}
 };
-function invSnapshot(){const m={};['curries','mains','soups','extras','snacks','drinks','sodas','donburi','sets'].forEach(k=>{DB[k].forEach(o=>m[o.id]=o.status);});return m;}
+function invSnapshot(){const m={};['curries','mains','soups','extras','snacks','desserts','drinks','sodas','donburi','sets'].forEach(k=>{DB[k].forEach(o=>m[o.id]=o.status);});return m;}
 
 /* ---------- seed data ---------- */
 const DB={
@@ -449,6 +449,10 @@ const DB={
     {id:'k16',zh:'蝦多士',en:'SHRIMP TOAST',price:45,status:'available'},
     {id:'k17',zh:'檸檬番薯條',en:'LEMON S.P FRIES',price:45,status:'available'},
   ],
+  /* 甜品（單點） */
+  desserts:[
+    {id:'ds_coco',zh:'椰子雪糕米布甸',en:'Coconut Gelato Rice Pudding',price:40,status:'available'},
+  ],
   /* 全日供應丼飯（首頁獨立入口；可加蛋/折扣小食/半價飲品） */
   donburi:[
     {id:'don_iberico',zh:'蔥油黑毛豬肉餅飯',en:'IBERICO PATTY W/ SCALLION OIL',price:68,status:'available'},
@@ -471,7 +475,7 @@ function genSlots(){const a=[];for(let t=11*60;t<=20*60;t+=15){const h=Math.floo
 DB.slots=genSlots();
 
 /* restore persisted */
-(function(){const s=Store.load();if(s){DB.orders=s.orders||[];DB.feedback=s.feedback||[];if(s.slots&&s.slots.length)DB.slots=s.slots;DB.orderSeq=s.orderSeq||DB.orderSeq;if(s.inv){['curries','mains','soups','extras','snacks','drinks','sodas','donburi','sets'].forEach(k=>DB[k].forEach(o=>{if(s.inv[o.id])o.status=s.inv[o.id];}));}}})();
+(function(){const s=Store.load();if(s){DB.orders=s.orders||[];DB.feedback=s.feedback||[];if(s.slots&&s.slots.length)DB.slots=s.slots;DB.orderSeq=s.orderSeq||DB.orderSeq;if(s.inv){['curries','mains','soups','extras','snacks','desserts','drinks','sodas','donburi','sets'].forEach(k=>DB[k].forEach(o=>{if(s.inv[o.id])o.status=s.inv[o.id];}));}}})();
 
 /* ---------- helpers ---------- */
 const $=id=>document.getElementById(id);
@@ -619,6 +623,7 @@ function render(){
     case 'build':a.innerHTML=viewBuild();break;
     case 'snacks':a.innerHTML=viewList('snacks','小食','SNACK','list');break;
     case 'drinks':a.innerHTML=viewList('drinks','飲品','DRINKS','list');break;
+    case 'desserts':a.innerHTML=viewList('desserts','甜品','DESSERT','list');break;
     case 'cart':a.innerHTML=viewCart();break;
     case 'checkout':a.innerHTML=viewCheckout();break;
     case 'success':a.innerHTML=viewSuccess();break;
@@ -688,9 +693,10 @@ const CURRY_PIC={c_butter:IMG_BASE+'curry-butter.png',c_ghost:IMG_BASE+'curry-gh
 window.openCurryPic=id=>{const pic=CURRY_PIC[id];if(!pic)return;$('overlay').innerHTML='<div class="modal-bg" onclick="closeCurryPic()"><img class="cpic-full" src="'+pic+'" alt=""></div>';};
 window.closeCurryPic=()=>{$('overlay').innerHTML='';};
 function viewHome(){
+  const an1='<div class="announce" style="margin-bottom:10px"><div class="an-tag"><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="#e8951e" stroke-width="2.5"><path d="M3 11l15-6v14L3 13zM18 8a3 3 0 0 1 0 6"/></svg> 公告 1 NOTICE</div><div class="an-body">全新登場！每日限量供應：椰子雪糕米布甸，快啲去甜品到睇吓啦！</div></div>';
   const anText=promoOn()?'多謝大家嘅體諒同支持！即日起至10月31日全單9折！〔優惠價格將會於結帳時顯示〕':DB.announcement.text;
-  const an=DB.announcement.visible&&anText?
-    '<div class="announce"><div class="an-tag"><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="#e8951e" stroke-width="2.5"><path d="M3 11l15-6v14L3 13zM18 8a3 3 0 0 1 0 6"/></svg> 公告 NOTICE</div><div class="an-body">'+anText+'</div></div>':'';
+  const an2=DB.announcement.visible&&anText?'<div class="announce"><div class="an-tag"><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="#e8951e" stroke-width="2.5"><path d="M3 11l15-6v14L3 13zM18 8a3 3 0 0 1 0 6"/></svg> 公告 2 NOTICE</div><div class="an-body">'+anText+'</div></div>':'';
+  const an=an1+an2;
   const cards=DB.curries.map(c=>{
     const pic=CURRY_PIC[c.id]||'';
     const tag=c.status==='coming'?'<div class="coming">即將推出</div>':(c.status==='sold_out'?'<div class="coming" style="color:#ff8a8a;border-color:#ff8a8a;background:#241010">售罄</div>':'');
@@ -724,6 +730,7 @@ function viewMenu(){
     '<div class="sec-h"><span class="bar"></span><h2>更多</h2><span class="en">MORE</span></div>'+
     '<div class="setcard" style="background:#16110b" onclick="go(\'snacks\')"><div class="info"><div class="han">小食</div><div class="en">SNACK</div></div><div class="pr" style="font-size:14px;color:var(--muted)">›</div></div>'+
     '<div class="setcard" style="background:#16110b" onclick="go(\'drinks\')"><div class="info"><div class="han">飲品</div><div class="en">DRINKS</div></div><div class="pr" style="font-size:14px;color:var(--muted)">›</div></div>'+
+    '<div class="setcard" style="background:#16110b" onclick="go(\'desserts\')"><div class="info"><div class="han">甜品</div><div class="en">DESSERT</div></div><div class="pr" style="font-size:14px;color:var(--muted)">›</div></div>'+
     cartBar();
 }
 function cartBar(){if(!S.cart.length)return'';return '<div class="summary"><div style="flex:1;color:var(--cream2);font-weight:700">購物車 '+cartPortions()+' 件</div><button class="add-cart" style="flex:none;padding:13px 22px" onclick="go(\'cart\')">去結帳<span>$'+cartTotal()+'</span></button></div>';}
@@ -1125,7 +1132,7 @@ async function syncStatus(){
     const rows=await r.json();
     if(Array.isArray(rows)){
       const m={};rows.forEach(x=>m[x.item_id]=x.status);
-      ['curries','mains','soups','extras','snacks','drinks','sodas','donburi','sets'].forEach(cat=>{(DB[cat]||[]).forEach(o=>{o.status=m[o.id]||'available';});});
+      ['curries','mains','soups','extras','snacks','desserts','drinks','sodas','donburi','sets'].forEach(cat=>{(DB[cat]||[]).forEach(o=>{o.status=m[o.id]||'available';});});
     }
     const today=new Date().toLocaleDateString('en-CA',{timeZone:'Asia/Hong_Kong'});
     const rs=await fetch(CFG.SUPABASE_URL+'/rest/v1/cb_slot_closed?slot_date=eq.'+today+'&select=slot_time',{headers:h});
