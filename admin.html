@@ -272,7 +272,9 @@ async function toggleSlot(t){const d=hkdate(new Date().toISOString());const clos
 function renderSlots(){
   const d=hkdate(new Date().toISOString());
   return '<div style="font-size:13px;color:var(--muted);margin:6px 4px 12px">今日（'+dayLabel(new Date().toISOString())+'）取餐時段 · 全部預設開放。㩒一下即關閉，客人揀唔到；再㩒開返。</div>'+
-    '<div class="slotgrid">'+slotTimes().map(function(t){var c=!!ST.slotClosed[t];return '<button class="slotbtn '+(c?'closed':'open')+'" onclick="toggleSlot(\''+t+'\')">'+t+'<small>'+(c?'已關':'開放')+'</small></button>';}).join('')+'</div>';
+    '<div class="slotgrid">'+
+    '<button class="slotbtn '+(ST.slotClosed['即時']?'closed':'open')+'" onclick="toggleSlot(\'即時\')">即時<small>'+(ST.slotClosed['即時']?'已關':'開放')+'</small></button>'+
+    slotTimes().map(function(t){var c=!!ST.slotClosed[t];return '<button class="slotbtn '+(c?'closed':'open')+'" onclick="toggleSlot(\''+t+'\')">'+t+'<small>'+(c?'已關':'開放')+'</small></button>';}).join('')+'</div>';
 }
 render();
 if(PW)refresh(),startPoll();
