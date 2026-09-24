@@ -526,6 +526,7 @@ let S={screen:'home', cart:[], build:null, checkout:{otype:null,utensil:null,slo
 /* ---------- BUILD logic ---------- */
 function findSet(id){return DB.sets.find(s=>s.id===id);}
 function buildDon(b){return b.donId?find('donburi',b.donId):null;}
+function buildJp(b){return b.jpId?find('jpcurry',b.jpId):null;}
 function openBuild(setId,editIndex){
   const set=findSet(setId);
   const def={setId,main:firstAvail('mains'),extras:[],drink:'none',snack:null,note:'',qty:1,editIndex:(editIndex??-1)};
@@ -540,6 +541,12 @@ function openDonburi(donId,editIndex){
   if(editIndex!=null&&editIndex>-1){Object.assign(def,JSON.parse(JSON.stringify(S.cart[editIndex].sel)),{note:S.cart[editIndex].note,qty:S.cart[editIndex].qty,editIndex});}
   S.build=def;go('build');
 }
+/* 日式咖喱飯：同丼飯一樣入建餐頁（額外加配/加購小食/加配飲品），jpId 平行 donId */
+function openJp(jpId,editIndex){
+  const def={jpId,extras:[],drink:'none',snack:null,note:'',qty:1,editIndex:(editIndex??-1)};
+  if(editIndex!=null&&editIndex>-1){Object.assign(def,JSON.parse(JSON.stringify(S.cart[editIndex].sel)),{note:S.cart[editIndex].note,qty:S.cart[editIndex].qty,editIndex});}
+  S.build=def;go('build');
+}
 function firstAvail(arr,pfx){const f=DB[arr].find(o=>o.status==='available'&&(!pfx||o.id.startsWith(pfx)));return (f||DB[arr][0]).id;}
 /* 加購小食（每款減 snackSetDiscount，限一款）；none = 唔加 */
 function setSnackOpts(){
@@ -548,8 +555,9 @@ function setSnackOpts(){
   return list;
 }
 function buildTotal(){
-  const b=S.build;let base;const don=buildDon(b);
-  if(don){base=don.price;}
+  const b=S.build;let base;const don=buildDon(b);const jp=buildJp(b);
+  if(jp){base=jp.price;}
+  else if(don){base=don.price;}
   else{const set=findSet(b.setId);base=set.price;
     if(set.kind==='curry')base+=find('curries',b.curry).delta;
     if(set.kind==='soup')base+=find('soups',b.soup).delta;
@@ -560,10 +568,10 @@ function buildTotal(){
   if(b.snack){const sk=find('snacks',b.snack);if(sk)base+=Math.max(0,sk.price-DB.snackSetDiscount);}
   return base*b.qty;
 }
-function buildLabel(b){const don=buildDon(b);return don?don.zh:findSet(b.setId).zh;}
+function buildLabel(b){const jp=buildJp(b);if(jp)return jp.zh;const don=buildDon(b);return don?don.zh:findSet(b.setId).zh;}
 function buildDesc(b){
-  const parts=[];const don=buildDon(b);
-  if(!don){const set=findSet(b.setId);
+  const parts=[];const don=buildDon(b);const jp=buildJp(b);
+  if(!don&&!jp){const set=findSet(b.setId);
     if(set.kind==='curry')parts.push(find('curries',b.curry).zh);
     if(set.kind==='soup')parts.push(find('soups',b.soup).zh);
     if(set.noodle){const n=set.noodle.find(x=>x.id===b.noodle);if(n)parts.push(n.zh);}
@@ -575,7 +583,7 @@ function buildDesc(b){
   return parts.join(' · ');
 }
 function addBuildToCart(){
-  const b=S.build;const item={type:b.donId?'don':'set',label:buildLabel(b),sel:{...b},qty:b.qty,note:b.note,unit:buildTotal()/b.qty,desc:buildDesc(b)};
+  const b=S.build;const item={type:b.jpId?'jp':(b.donId?'don':'set'),label:buildLabel(b),sel:{...b},qty:b.qty,note:b.note,unit:buildTotal()/b.qty,desc:buildDesc(b)};
   delete item.sel.editIndex;delete item.sel.qty;delete item.sel.note;
   if(b.editIndex>-1){S.cart[b.editIndex]=item;toast('已更新');}else{S.cart.push(item);toast('已加入購物車');}
   Store.save();go('menu');
@@ -602,10 +610,6 @@ function addSimple(arr,id){const p=find(arr,id);if(p.status!=='available'){toast
 }
 function addDrink(id,opts){const p=find('drinks',id);const note=opts.join(' ');
   S.cart.push({type:'item',pid:id,label:p.zh,qty:1,unit:p.price,note,desc:p.en});closeSheet();toast('已加入購物車');render();}
-/* 日式咖喱飯系列：撳一下直接加入（type='jp'，唔參與折扣）；同款相同就加數量 */
-window.addJp=function(id){const p=find('jpcurry',id);if(!p||p.status!=='available'){toast('已售罄');return;}
-  const ex=S.cart.find(i=>i.type==='jp'&&i.pid===id);if(ex){ex.qty++;}else{S.cart.push({type:'jp',pid:id,label:p.zh,qty:1,unit:p.price,note:'',desc:p.en});}
-  Store.save();toast('已加入購物車');render();};
 
 /* ---------- payment (MOCK) ---------- */
 async function payReal(){
@@ -752,7 +756,7 @@ function viewHome(){
 function viewMenu(){
   const sets=DB.sets.map(s=>{const so=s.status==='sold_out';return '<div class="setcard '+(s.kind==='soup'?'udon':'curry')+(so?' so':'')+'"'+(so?'':' onclick="openBuild(\''+s.id+'\')"')+'><div class="info"><div class="han">'+s.zh+(so?' <span class="so-tag">售罄</span>':'')+'</div><div class="en">'+s.en+' · 全日供應</div></div><div class="pr">$'+s.price+'<small>起</small></div></div>';}).join('');
   const dons=DB.donburi.map(d=>{const so=d.status!=='available';return '<div class="setcard udon'+(so?' so':'')+'"'+(so?'':' onclick="openDonburi(\''+d.id+'\')"')+'><div class="info"><div class="han">'+d.zh+(so?' <span class="so-tag">售罄</span>':'')+'</div><div class="en">'+d.en+'</div></div><div class="pr">$'+d.price+'</div></div>';}).join('');
-  const jpc=DB.jpcurry.map(d=>{const so=d.status!=='available';return '<div class="setcard curry'+(so?' so':'')+'"'+(so?'':' onclick="addJp(\''+d.id+'\')"')+'><div class="info"><div class="han">'+d.zh+(so?' <span class="so-tag">售罄</span>':'')+'</div><div class="en">'+d.en+'</div></div><div class="pr">$'+d.price+'</div></div>';}).join('');
+  const jpc=DB.jpcurry.map(d=>{const so=d.status!=='available';return '<div class="setcard curry'+(so?' so':'')+'"'+(so?'':' onclick="openJp(\''+d.id+'\')"')+'><div class="info"><div class="han">'+d.zh+(so?' <span class="so-tag">售罄</span>':'')+'</div><div class="en">'+d.en+'</div></div><div class="pr">$'+d.price+'</div></div>';}).join('');
   return appbar()+
     '<div class="sec-h"><span class="bar"></span><h2>全日套餐</h2><span class="en">ALL DAY SETS</span></div>'+sets+
     '<div class="sec-h"><span class="bar"></span><h2>日式咖喱飯</h2><span class="en">JAPANESE CURRY RICE</span></div>'+jpc+
@@ -787,9 +791,9 @@ window.toggleExtra=id=>{const i=S.build.extras.indexOf(id);if(i>-1)S.build.extra
 window.buildQty=d=>{S.build.qty=Math.max(1,S.build.qty+d);render();};
 
 function viewBuild(){
-  const b=S.build;const don=buildDon(b);const set=don?null:findSet(b.setId);
-  const price=don?don.price:set.price;
-  let h=appbar("go('menu')")+'<div class="b-title">'+buildLabel(b)+' <em>$'+price+(don?'':'起')+'</em></div>';
+  const b=S.build;const don=buildDon(b);const jp=buildJp(b);const set=(don||jp)?null:findSet(b.setId);
+  const price=jp?jp.price:(don?don.price:set.price);
+  let h=appbar("go('menu')")+'<div class="b-title">'+buildLabel(b)+' <em>$'+price+((don||jp)?'':'起')+'</em></div>';
   let step=0;
   const bar=(zh,en)=>{step++;return '<div class="stepbar"><span class="n">STEP '+step+'</span><span class="chev">»</span><span class="lbl">'+zh+'<small>'+en+'</small></span></div>';};
   if(set){
@@ -857,7 +861,7 @@ window.closeSheet=()=>{$('overlay').innerHTML='';};
 function viewCart(){
   if(!S.cart.length)return appbar("go('menu')")+'<div class="empty">購物車空空如也<br>去揀啲好嘢啦！</div>';
   const items=S.cart.map((it,idx)=>{
-    const editBtn=(it.type==='set'||it.type==='don')?'<button class="edit" onclick="'+(it.type==='don'?'openDonburi(\''+it.sel.donId+'\','+idx+')':'openBuild(\''+it.sel.setId+'\','+idx+')')+'">編輯</button>':'';
+    const editBtn=(it.type==='set'||it.type==='don'||it.type==='jp')?'<button class="edit" onclick="'+(it.type==='jp'?'openJp(\''+it.sel.jpId+'\','+idx+')':it.type==='don'?'openDonburi(\''+it.sel.donId+'\','+idx+')':'openBuild(\''+it.sel.setId+'\','+idx+')')+'">編輯</button>':'';
     const noteLine=it.note?'<div class="cd">備註：'+it.note+'</div>':'';
     return '<div class="citem"><div class="ct">'+it.label+'</div><div class="cd">'+it.desc+'</div>'+noteLine+
       '<div class="cr"><div class="acts"><div class="qty"><button onclick="cartQty('+idx+',-1)">−</button><b>'+it.qty+'</b><button onclick="cartQty('+idx+',1)">＋</button></div>'+editBtn+'<button class="del" onclick="cartDel('+idx+')">刪除</button></div><div class="price">$'+(it.unit*it.qty)+'</div></div></div>';
