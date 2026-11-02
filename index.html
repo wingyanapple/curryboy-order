@@ -378,40 +378,37 @@ const Store={
   save(){try{localStorage.setItem('curryboy_mvp',JSON.stringify({orders:DB.orders,feedback:DB.feedback,slots:DB.slots,orderSeq:DB.orderSeq,inv:invSnapshot()}));}catch(e){}},
   load(){try{const r=localStorage.getItem('curryboy_mvp');if(!r)return null;return JSON.parse(r);}catch(e){return null;}}
 };
-function invSnapshot(){const m={};['curries','mains','soups','extras','snacks','desserts','drinks','sodas','jpcurry','donburi','sets'].forEach(k=>{DB[k].forEach(o=>m[o.id]=o.status);});return m;}
+function invSnapshot(){const m={};['curries','mains','soups','extras','snacks','desserts','drinks','sodas','donburi','sets'].forEach(k=>{DB[k].forEach(o=>m[o.id]=o.status);});return m;}
 
 /* ---------- seed data ---------- */
 const DB={
   announcement:{visible:true,text:'多謝大家嘅意見！比完錢唔記得cap圖，可以喺我的訂單搵返Number啦！'},
-  topPicks:['咖喱飯 + 吉列薄豬扒','咖喱沾麵 + 鼠尾草烤雞','甜醬油吉列薄豬扒飯'],
-  /* 四款咖喱（全部有貨；只有加錢先顯示 delta） */
+  topPicks:['咖喱飯 + 吉列薄豬扒','咖喱撈麵 + 鼠尾草烤雞','甜醬油吉列薄豬扒飯'],
+  /* 特色咖喱（3 款；套餐加價按 set.cd；首頁相淨係牛油+黑椒） */
   curries:[
+    {id:'c_jp',zh:'日式咖喱',en:'JAPANESE',delta:0,status:'available',spice:0},
     {id:'c_butter',zh:'牛油咖喱',en:'BUTTER',delta:0,status:'available',spice:1},
-    {id:'c_ghost',zh:'麻辣咖喱',en:'GHOST',delta:10,status:'available',spice:5},
     {id:'c_king',zh:'黑椒咖喱',en:'KING',delta:0,status:'available',spice:3},
-    {id:'c_queen',zh:'小荳蔻咖喱',en:'QUEEN',delta:0,status:'available',spice:0},
   ],
-  /* 主菜 7 款（rec = 手指公推介；白滷水牛腩 +10） */
+  /* 主菜 10 款（rec = 手指公推介；delta 跟 PDF：5款+$0、5款+$10） */
   mains:[
-    {id:'m_chicken',zh:'鼠尾草烤雞',en:'SAGE ROAST CHICKEN',delta:0,status:'available',rec:true},
-    {id:'m_brisket',zh:'白滷水牛腩',en:'BEEF BRISKET',delta:10,status:'available'},
-    {id:'m_iberico',zh:'黑毛豬肉餅',en:'IBERICO PATTY',delta:0,status:'available'},
-    {id:'m_miso',zh:'味噌燒茄子',en:'MISO EGGPLANT',delta:0,status:'available'},
-    {id:'m_tonkatsu',zh:'吉列薄豬扒',en:'TONKATSU',delta:0,status:'available',rec:true},
-    {id:'m_fish',zh:'吉列魚柳',en:'CUTLET FISH FILLET',delta:0,status:'available'},
-    {id:'m_chashu',zh:'炙燒叉燒',en:'ABURI CHASHU',delta:0,status:'available'},
+    {id:'m_pork',zh:'汁燒腩肉',en:'TERIYAKI PORK',delta:0,status:'available',rec:true},
+    {id:'m_karaage',zh:'唐揚炸雞',en:'CHICKEN KARAAGE',delta:0,status:'available'},
+    {id:'m_ebi',zh:'吉列炸蝦',en:'EBI FRY',delta:0,status:'available'},
+    {id:'m_eggplant',zh:'孜然茄子',en:'CUMIN EGGPLANT',delta:0,status:'available'},
+    {id:'m_meatball',zh:'炸肉丸',en:'MEAT BALLS',delta:0,status:'available'},
+    {id:'m_beeftongue',zh:'汁燒牛舌粒',en:'TERIYAKI BEEF TONGUE',delta:10,status:'available'},
+    {id:'m_chicken',zh:'鼠尾草烤雞',en:'SAGE ROAST CHICKEN',delta:10,status:'available',rec:true},
+    {id:'m_iberico',zh:'黑毛豬肉餅',en:'IBERICO PATTY',delta:10,status:'available'},
+    {id:'m_tonkatsu',zh:'吉列薄豬扒',en:'THIN-CUT TONKATSU',delta:10,status:'available',rec:true},
+    {id:'m_fish',zh:'吉列魚柳',en:'CUTLET FISH FILLET',delta:10,status:'available'},
   ],
-  /* 湯（湯麵套餐用；湯咖喱 +10） */
-  soups:[
-    {id:'s_beef',zh:'牛骨湯',en:'BEEFBONE BROTH',delta:0,status:'available'},
-    {id:'s_tomato',zh:'蕃茄湯',en:'TOMATO SOUP',delta:0,status:'available'},
-    {id:'s_curry',zh:'湯咖喱',en:'SOUP CURRY',delta:10,status:'available'},
-  ],
-  /* 額外加配：3 款蛋（可多選 / 可唔加） */
+  /* 湯（已停用；湯咖喱改用 curries） */
+  soups:[],
+  /* 額外加配：2 款蛋（可多選 / 可唔加） */
   extras:[
     {id:'e_egg',zh:'太陽蛋',en:'SUNSHINE EGG',delta:10,status:'available'},
     {id:'e_soft',zh:'醬油漬溏心蛋',en:'MARINATED EGG',delta:12,status:'available'},
-    {id:'e_yolk',zh:'醬油漬蛋黃',en:'CURED YOLK',delta:15,status:'available'},
   ],
   /* 汽水（套餐 +$5） */
   sodas:[
@@ -441,7 +438,6 @@ const DB={
     {id:'k4',zh:'手工咖喱角',en:'CURRY PUFF',price:25,status:'available',rec:true},
     {id:'k5',zh:'咖喱燒賣魚蛋',en:'SIUMAI FISHBALL COMBO',price:25,status:'available'},
     {id:'k6',zh:'咖喱年糕',en:'CURRY RICECAKE',price:25,status:'available'},
-    {id:'k7',zh:'炸翠玉瓜',en:'CRISPY ZUCCHINI',price:25,status:'available'},
     {id:'k8',zh:'牛油粟米',en:'BUTTER CORN',price:25,status:'available'},
     {id:'k9',zh:'吉列炸蠔',en:'CRISPY OYSTER',price:35,status:'available'},
     {id:'k10',zh:'阿多波炸雞',en:'ADOBO NUGGETS',price:35,status:'available'},
@@ -452,30 +448,26 @@ const DB={
     {id:'k15',zh:'霹靂雞軟骨',en:'PERIPERI CARTILAGE',price:35,status:'available'},
     {id:'k16',zh:'蝦多士',en:'SHRIMP TOAST',price:45,status:'available'},
     {id:'k17',zh:'檸檬番薯條',en:'LEMON S.P FRIES',price:45,status:'available'},
+    {id:'k18',zh:'味噌燒茄子',en:'MISO EGGPLANT',price:35,status:'available'},
   ],
   /* 甜品（單點） */
   desserts:[
     {id:'ds_coco',zh:'椰子雪糕米布甸',en:'Coconut Gelato Rice Pudding',price:40,status:'available'},
   ],
-  /* 日式咖喱飯系列（$48；不參與任何折扣優惠 —— 見 jpTotal/payableTotal 分開計） */
-  jpcurry:[
-    {id:'jp_pork',zh:'日式咖喱配汁燒腩肉',en:'JAPANESE CURRY WITH TERIYAKI PORK',price:48,status:'available'},
-    {id:'jp_ebi',zh:'日式咖喱配吉列炸蝦',en:'JAPANESE CURRY WITH EBI FRY',price:48,status:'available'},
-    {id:'jp_chicken',zh:'日式咖喱配汁燒雞肉',en:'JAPANESE CURRY WITH TERIYAKI CHICKEN',price:48,status:'available'},
-  ],
-  /* 全日供應丼飯（首頁獨立入口；可加蛋/折扣小食/半價飲品） */
+  /* 全日供應（6 款；有加配：加蛋/折扣小食/半價飲品；撳入去用 openDonburi 建餐頁） */
   donburi:[
-    {id:'don_iberico',zh:'蔥油黑毛豬肉餅飯',en:'IBERICO PATTY W/ SCALLION OIL',price:68,status:'available'},
-    {id:'don_tonkatsu',zh:'甜醬油吉列薄豬扒飯',en:'TONKATSU W/ SWEET SOY',price:68,status:'available'},
-    {id:'don_oyako',zh:'親子烤雞飯 · 配醬油漬蛋黃',en:'OYAKODON W/ CURED YOLK',price:68,status:'available'},
-    {id:'don_halibut',zh:'西京燒比目魚 · 配茶漬飯',en:'SAIKYO HALIBUT W/ OCHAZUKE',price:88,status:'available'},
+    {id:'don_beeftongue',zh:'蔥油燒牛舌粒飯',en:'SCALLION OIL BEEF TONGUE',price:58,status:'available'},
+    {id:'don_iberico',zh:'蔥油黑毛豬肉餅飯',en:'IBERICO PATTY W/ SCALLION OIL',price:58,status:'available'},
+    {id:'don_chicken',zh:'蔥油鼠尾草烤雞飯',en:'SAGE CHICKEN W/ SCALLION OIL',price:58,status:'available'},
+    {id:'don_pork',zh:'蔥油汁燒腩肉飯',en:'TERIYAKI PORK W/ SCALLION OIL',price:48,status:'available'},
+    {id:'don_tonkatsu',zh:'甜醬油吉列薄豬扒飯',en:'TONKATSU W/ SWEET SOY',price:58,status:'available'},
+    {id:'don_karaage',zh:'甜醬油唐揚炸雞飯',en:'CHICKEN KARAAGE W/ SWEET SOY',price:48,status:'available'},
   ],
-  /* 四個套餐結構（flow = 揀嘅步驟；fixed = 固定主食；noodle = 麵/粉選項） */
+  /* 全日套餐（3 個；cd=每套餐咖喱加價 map；noodle=主食選擇；flow：咖喱→主菜→主食） */
   sets:[
-    {id:'curryrice',zh:'咖喱飯',en:'CURRY RICE',price:78,kind:'curry',fixed:{zh:'白飯',en:'RICE'},flow:['curry','main']},
-    {id:'tsukemen',zh:'咖喱沾麵',en:'CURRY TSUKEMEN',price:88,kind:'curry',noodle:[{id:'ramen',zh:'新鮮拉麵',en:'FRESH RAMEN',delta:0},{id:'udon',zh:'新鮮烏冬',en:'FRESH UDON',delta:0}],flow:['noodle','curry','main']},
-    {id:'roti',zh:'咖喱薄餅',en:'CURRY ROTI',price:90,kind:'curry',fixed:{zh:'薄餅',en:'ROTI'},flow:['curry','main']},
-    {id:'soupnoodle',zh:'湯麵',en:'SOUP NOODLE',price:58,kind:'soup',noodle:[{id:'pho',zh:'金邊粉',en:'PHO',delta:0},{id:'udon',zh:'新鮮烏冬',en:'FRESH UDON',delta:10},{id:'rice',zh:'轉湯飯',en:'RICE',delta:0}],flow:['noodle','soup','main']},
+    {id:'curryrice',zh:'咖喱飯',en:'CURRY RICE',price:48,cd:{c_jp:0,c_butter:20,c_king:20},noodle:[{id:'rice',zh:'白飯',en:'RICE',delta:0},{id:'udon',zh:'烏冬',en:'UDON',delta:10},{id:'roti',zh:'薄餅',en:'ROTI',delta:12}],flow:['curry','main','noodle']},
+    {id:'currynoodle',zh:'咖喱撈麵',en:'CURRY NOODLES',price:58,cd:{c_jp:0,c_butter:20,c_king:20},noodle:[{id:'ramen',zh:'新鮮粗拉麵',en:'FRESH RAMEN',delta:0},{id:'udon',zh:'烏冬',en:'UDON',delta:0}],flow:['curry','main','noodle']},
+    {id:'soupcurry',zh:'湯咖喱',en:'SOUP CURRY',price:52,cd:{c_jp:0,c_butter:16,c_king:16},noodle:[{id:'rice',zh:'白飯',en:'RICE',delta:0},{id:'pho',zh:'越式河粉',en:'PHO',delta:0},{id:'udon',zh:'烏冬',en:'UDON',delta:10}],flow:['curry','main','noodle']},
   ],
   utensilPrice:1,
   snackSetDiscount:5,
@@ -485,7 +477,7 @@ function genSlots(){const a=[];for(let t=11*60;t<=20*60;t+=15){const h=Math.floo
 DB.slots=genSlots();
 
 /* restore persisted */
-(function(){const s=Store.load();if(s){DB.orders=s.orders||[];DB.feedback=s.feedback||[];if(s.slots&&s.slots.length)DB.slots=s.slots;DB.orderSeq=s.orderSeq||DB.orderSeq;if(s.inv){['curries','mains','soups','extras','snacks','desserts','drinks','sodas','jpcurry','donburi','sets'].forEach(k=>DB[k].forEach(o=>{if(s.inv[o.id])o.status=s.inv[o.id];}));}}})();
+(function(){const s=Store.load();if(s){DB.orders=s.orders||[];DB.feedback=s.feedback||[];if(s.slots&&s.slots.length)DB.slots=s.slots;DB.orderSeq=s.orderSeq||DB.orderSeq;if(s.inv){['curries','mains','soups','extras','snacks','desserts','drinks','sodas','donburi','sets'].forEach(k=>DB[k].forEach(o=>{if(s.inv[o.id])o.status=s.inv[o.id];}));}}})();
 
 /* ---------- helpers ---------- */
 const $=id=>document.getElementById(id);
@@ -529,9 +521,7 @@ function buildDon(b){return b.donId?find('donburi',b.donId):null;}
 function buildJp(b){return b.jpId?find('jpcurry',b.jpId):null;}
 function openBuild(setId,editIndex){
   const set=findSet(setId);
-  const def={setId,main:firstAvail('mains'),extras:[],drink:'none',snack:null,note:'',qty:1,editIndex:(editIndex??-1)};
-  if(set.kind==='curry')def.curry=firstAvail('curries');
-  if(set.kind==='soup')def.soup=firstAvail('soups');
+  const def={setId,curry:firstAvail('curries'),main:firstAvail('mains'),extras:[],drink:'none',snack:null,note:'',qty:1,editIndex:(editIndex??-1)};
   if(set.noodle)def.noodle=set.noodle[0].id;
   if(editIndex!=null&&editIndex>-1){Object.assign(def,JSON.parse(JSON.stringify(S.cart[editIndex].sel)),{note:S.cart[editIndex].note,qty:S.cart[editIndex].qty,editIndex});}
   S.build=def;go('build');
@@ -559,10 +549,9 @@ function buildTotal(){
   if(jp){base=jp.price;}
   else if(don){base=don.price;}
   else{const set=findSet(b.setId);base=set.price;
-    if(set.kind==='curry')base+=find('curries',b.curry).delta;
-    if(set.kind==='soup')base+=find('soups',b.soup).delta;
-    if(set.noodle){const n=set.noodle.find(x=>x.id===b.noodle);base+=n?n.delta:0;}
-    base+=find('mains',b.main).delta;}
+    base+=(set.cd&&set.cd[b.curry])||0;
+    base+=find('mains',b.main).delta;
+    if(set.noodle){const n=set.noodle.find(x=>x.id===b.noodle);base+=n?n.delta:0;}}
   b.extras.forEach(id=>base+=find('extras',id).delta);
   const d=setDrinkById(b.drink);base+=d?d.delta:0;
   if(b.snack){const sk=find('snacks',b.snack);if(sk)base+=Math.max(0,sk.price-DB.snackSetDiscount);}
@@ -572,11 +561,9 @@ function buildLabel(b){const jp=buildJp(b);if(jp)return jp.zh;const don=buildDon
 function buildDesc(b){
   const parts=[];const don=buildDon(b);const jp=buildJp(b);
   if(!don&&!jp){const set=findSet(b.setId);
-    if(set.kind==='curry')parts.push(find('curries',b.curry).zh);
-    if(set.kind==='soup')parts.push(find('soups',b.soup).zh);
-    if(set.noodle){const n=set.noodle.find(x=>x.id===b.noodle);if(n)parts.push(n.zh);}
-    else if(set.fixed)parts.push(set.fixed.zh);
-    parts.push(find('mains',b.main).zh);}
+    parts.push(find('curries',b.curry).zh);
+    parts.push(find('mains',b.main).zh);
+    if(set.noodle){const n=set.noodle.find(x=>x.id===b.noodle);if(n)parts.push(n.zh);}}
   b.extras.forEach(id=>parts.push('+'+find('extras',id).zh));
   if(b.snack){const sk=find('snacks',b.snack);if(sk)parts.push('小食:'+sk.zh);}
   const d=setDrinkById(b.drink);if(d&&d.id!=='none')parts.push('飲品:'+d.zh);
@@ -721,15 +708,12 @@ window.queryMyOrders=async function(){
 };
 
 const IMG_BASE='https://kpjilykqswlogxhjmnwj.supabase.co/storage/v1/object/public/site/';
-const CURRY_PIC={c_butter:IMG_BASE+'curry-butter.png',c_ghost:IMG_BASE+'curry-ghost.png',c_king:IMG_BASE+'curry-king.png',c_queen:IMG_BASE+'curry-queen.png'};
+const CURRY_PIC={c_butter:IMG_BASE+'curry-butter.png',c_king:IMG_BASE+'curry-king.png'};
 window.openCurryPic=id=>{const pic=CURRY_PIC[id];if(!pic)return;$('overlay').innerHTML='<div class="modal-bg" onclick="closeCurryPic()"><img class="cpic-full" src="'+pic+'" alt=""></div>';};
 window.closeCurryPic=()=>{$('overlay').innerHTML='';};
 function viewHome(){
-  const an1='<div class="announce" style="margin-bottom:10px"><div class="an-tag"><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="#e8951e" stroke-width="2.5"><path d="M3 11l15-6v14L3 13zM18 8a3 3 0 0 1 0 6"/></svg> 公告 1 NOTICE</div><div class="an-body">全新登場！日式咖喱飯系列！出餐包快！最緊要一個字！抵！</div></div>';
-  const anText=promoOn()?'多謝大家嘅體諒同支持！即日起至10月31日全單9折！〔優惠價格將會於結帳時顯示〕':DB.announcement.text;
-  const an2=DB.announcement.visible&&anText?'<div class="announce"><div class="an-tag"><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="#e8951e" stroke-width="2.5"><path d="M3 11l15-6v14L3 13zM18 8a3 3 0 0 1 0 6"/></svg> 公告 2 NOTICE</div><div class="an-body">'+anText+'</div></div>':'';
-  const an=an1+an2;
-  const cards=DB.curries.map(c=>{
+  const an='<div class="announce"><div class="an-tag"><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="#e8951e" stroke-width="2.5"><path d="M3 11l15-6v14L3 13zM18 8a3 3 0 0 1 0 6"/></svg> 公告 NOTICE</div><div class="an-body">新Menu隆重登場！大家嘅聲音我哋收到啦，多謝大家一直以來嘅支持！款式多咗，優惠多咗，出餐時間快咗！</div></div>';
+  const cards=DB.curries.filter(c=>CURRY_PIC[c.id]).map(c=>{
     const pic=CURRY_PIC[c.id]||'';
     const tag=c.status==='coming'?'<div class="coming">即將推出</div>':(c.status==='sold_out'?'<div class="coming" style="color:#ff8a8a;border-color:#ff8a8a;background:#241010">售罄</div>':'');
     const sp=c.spice===0?'<span class="nochili">不辣</span>':'<span class="spice">'+[1,2,3,4,5].map(i=>'<span class="chili'+(i<=c.spice?'':' off')+'">🌶️</span>').join('')+'</span>';
@@ -749,18 +733,16 @@ function viewHome(){
       '<a class="mapbtn" href="https://www.google.com/maps/search/?api=1&query=%E6%AF%85%E5%8A%9B%E5%B7%A5%E6%A5%AD%E4%B8%AD%E5%BF%83%E8%A7%80%E5%A1%98" target="_blank" rel="noopener">在 Google 地圖開啟 · 導航</a>'+
     '</div></div>'+
     '<div class="sec-h"><span class="bar"></span><h2>人氣餐點</h2><span class="en">TOP PICKS</span></div><div class="rank">'+picks+'</div>'+
-    '<div class="sec-h"><span class="bar"></span><h2>四款咖喱</h2><span class="en">OUR CURRIES</span></div><div class="curry-pics">'+cards+'</div>'+
+    '<div class="sec-h"><span class="bar"></span><h2>特色咖喱</h2><span class="en">OUR CURRIES</span></div><div class="curry-pics">'+cards+'</div>'+
     '</div>';
 }
 
 function viewMenu(){
   const sets=DB.sets.map(s=>{const so=s.status==='sold_out';return '<div class="setcard '+(s.kind==='soup'?'udon':'curry')+(so?' so':'')+'"'+(so?'':' onclick="openBuild(\''+s.id+'\')"')+'><div class="info"><div class="han">'+s.zh+(so?' <span class="so-tag">售罄</span>':'')+'</div><div class="en">'+s.en+' · 全日供應</div></div><div class="pr">$'+s.price+'<small>起</small></div></div>';}).join('');
   const dons=DB.donburi.map(d=>{const so=d.status!=='available';return '<div class="setcard udon'+(so?' so':'')+'"'+(so?'':' onclick="openDonburi(\''+d.id+'\')"')+'><div class="info"><div class="han">'+d.zh+(so?' <span class="so-tag">售罄</span>':'')+'</div><div class="en">'+d.en+'</div></div><div class="pr">$'+d.price+'</div></div>';}).join('');
-  const jpc=DB.jpcurry.map(d=>{const so=d.status!=='available';return '<div class="setcard curry'+(so?' so':'')+'"'+(so?'':' onclick="openJp(\''+d.id+'\')"')+'><div class="info"><div class="han">'+d.zh+(so?' <span class="so-tag">售罄</span>':'')+'</div><div class="en">'+d.en+'</div></div><div class="pr">$'+d.price+'</div></div>';}).join('');
   return appbar()+
     '<div class="sec-h"><span class="bar"></span><h2>全日套餐</h2><span class="en">ALL DAY SETS</span></div>'+sets+
-    '<div class="sec-h"><span class="bar"></span><h2>日式咖喱飯</h2><span class="en">JAPANESE CURRY RICE</span></div>'+jpc+
-    '<div class="sec-h"><span class="bar"></span><h2>全日供應丼飯</h2><span class="en">ALL DAY DONBURI</span></div>'+dons+
+    '<div class="sec-h"><span class="bar"></span><h2>全日供應</h2><span class="en">AVAILABLE ALL DAY</span></div>'+dons+
     '<div class="sec-h"><span class="bar"></span><h2>更多</h2><span class="en">MORE</span></div>'+
     '<div class="setcard" style="background:#16110b" onclick="go(\'snacks\')"><div class="info"><div class="han">小食</div><div class="en">SNACK</div></div><div class="pr" style="font-size:14px;color:var(--muted)">›</div></div>'+
     '<div class="setcard" style="background:#16110b" onclick="go(\'drinks\')"><div class="info"><div class="han">飲品</div><div class="en">DRINKS</div></div><div class="pr" style="font-size:14px;color:var(--muted)">›</div></div>'+
@@ -798,12 +780,10 @@ function viewBuild(){
   const bar=(zh,en)=>{step++;return '<div class="stepbar"><span class="n">STEP '+step+'</span><span class="chev">»</span><span class="lbl">'+zh+'<small>'+en+'</small></span></div>';};
   if(set){
     set.flow.forEach(f=>{
-      if(f==='noodle')h+=bar('揀麵 / 粉','CHOOSE NOODLE')+'<div class="opts">'+set.noodle.map(o=>optRow(o,'radio',b.noodle,'selNoodle')).join('')+'</div>';
-      else if(f==='curry')h+=bar('揀咖喱','CHOOSE CURRY')+'<div class="opts">'+DB.curries.map(o=>optRow(o,'radio',b.curry,'selCurry')).join('')+'</div>';
-      else if(f==='soup')h+=bar('揀湯','CHOOSE SOUP')+'<div class="opts">'+DB.soups.map(o=>optRow(o,'radio',b.soup,'selSoup')).join('')+'</div>';
-      else if(f==='main')h+=bar('揀主菜','CHOOSE MAIN')+'<div class="opts">'+DB.mains.map(o=>optRow(o,'radio',b.main,'selMain')).join('')+'</div>';
+      if(f==='noodle')h+=bar('選擇主食','CHOOSE YOUR BASE')+'<div class="opts">'+set.noodle.map(o=>optRow(o,'radio',b.noodle,'selNoodle')).join('')+'</div>';
+      else if(f==='curry')h+=bar('選擇咖喱','CHOOSE YOUR CURRY')+'<div class="opts">'+DB.curries.map(c=>optRow({id:c.id,zh:c.zh,en:c.en,status:c.status,delta:(set.cd&&set.cd[c.id])||0},'radio',b.curry,'selCurry')).join('')+'</div>';
+      else if(f==='main')h+=bar('選擇主菜','CHOOSE YOUR MAIN')+'<div class="opts">'+DB.mains.map(o=>optRow(o,'radio',b.main,'selMain')).join('')+'</div>';
     });
-    if(set.fixed)h+='<div class="grp-cap">主食：'+set.fixed.zh+'</div>';
   }
   h+='<div class="grp-cap">額外加配</div><div class="opts">'+DB.extras.map(o=>optRow(o,'check',b.extras,'toggleExtra')).join('')+'</div>';
   h+='<div class="grp-cap">加購小食</div><div class="opts">'+setSnackOpts().map(o=>optRow(o,'radio',b.snack||'none','selSnack')).join('')+'</div>';
@@ -1173,7 +1153,7 @@ async function syncStatus(){
     const rows=await r.json();
     if(Array.isArray(rows)){
       const m={};rows.forEach(x=>m[x.item_id]=x.status);
-      ['curries','mains','soups','extras','snacks','desserts','drinks','sodas','jpcurry','donburi','sets'].forEach(cat=>{(DB[cat]||[]).forEach(o=>{o.status=m[o.id]||'available';});});
+      ['curries','mains','soups','extras','snacks','desserts','drinks','sodas','donburi','sets'].forEach(cat=>{(DB[cat]||[]).forEach(o=>{o.status=m[o.id]||'available';});});
     }
     const today=new Date().toLocaleDateString('en-CA',{timeZone:'Asia/Hong_Kong'});
     const rs=await fetch(CFG.SUPABASE_URL+'/rest/v1/cb_slot_closed?slot_date=eq.'+today+'&select=slot_time',{headers:h});
