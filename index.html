@@ -270,6 +270,8 @@
   .promo-sum .pr-row.fin{border-top:1px dashed #3a2a14;margin-top:4px;padding-top:8px;font-size:16px}
   .promo-sum .pr-row.fin span:last-child{font-family:var(--pixel);color:var(--gold);font-size:20px}
   .promo-sum .pr-note{font-size:11px;color:var(--muted);padding:2px 0 4px;line-height:1.5}
+  .giftline{background:#1a1205;border:1px solid var(--orange);border-radius:12px;padding:10px 13px;margin-bottom:10px;color:var(--gold);font-size:13px;line-height:1.6}
+  .giftline b{color:#fff}
   .cta{display:block;width:100%;text-align:center;font-family:var(--pixel);font-size:12px;color:#1a1208;background:var(--orange);border:none;border-radius:13px;padding:16px;box-shadow:4px 4px 0 #000}
   .cta:disabled{opacity:.45;box-shadow:none}
   .fbmodal-bg{position:fixed;inset:0;background:rgba(0,0,0,.74);display:flex;align-items:center;justify-content:center;z-index:9999;padding:26px}
@@ -514,6 +516,7 @@ const CFG={
 };
 let S={screen:'home', cart:[], build:null, checkout:{otype:null,utensil:null,slot:null,phoneErr:'',err:''}, paying:false,
         admin:{logged:false,tab:'orders',orderSort:'created',rep:{mode:'today',day:null,month:''}}, fb:{type:'食物評價',rating:5}};
+try{S.checkout.phone=localStorage.getItem('cb_phone')||'';}catch(e){}  /* 記住上次電話，方便帶出贈品/獎券 */
 
 /* ---------- BUILD logic ---------- */
 function findSet(id){return DB.sets.find(s=>s.id===id);}
@@ -607,6 +610,7 @@ async function payReal(){
   if(c.utensil===null){c.err='請先揀餐具（不需要或份數）';render();return;}
   if(c.slot===null){c.err='請揀取餐時間';render();return;}
   if(!/^[2-9]\d{7}$/.test(phone)){c.phoneErr='請輸入有效嘅 8 位香港電話號碼';render();return;}
+  try{localStorage.setItem('cb_phone',phone);}catch(e){}  /* 記住電話，下次帶出贈品/獎券 */
   const slot=DB.slots.find(s=>s.time===c.slot);
   if(slot&&slotStatus(slot)!=='available'){c.err=slotStatus(slot)==='past'?'呢個取餐時間已過，請另揀':'呢個時段已關閉，請另揀';c.slot=null;render();return;}
   if(c.slot==='即時'&&nowSlotStatus()!=='available'){c.err='「即時」暫時未能落單，請另揀時間';c.slot=null;render();return;}
@@ -861,6 +865,7 @@ window.cartDel=i=>{S.cart.splice(i,1);render();};
 
 function viewCheckout(){
   const c=S.checkout;
+  chkGift();
   const nowSt=nowSlotStatus();const nowAvail=nowSt==='available';
   const nowCls='slot now'+(nowAvail?(c.slot==='即時'?' on':''):(nowSt==='soon'?' soon':' full'));
   const nowLbl=nowSt==='full'?'<small>已關</small>':nowSt==='soon'?'<small>11:00起</small>':nowSt==='past'?'<small>已過</small>':'';
@@ -881,10 +886,11 @@ function viewCheckout(){
       '<div class="ustep '+(uHas?'on':'')+'"><span class="w">需要</span><button onclick="setUtensil(Math.max(1,(S.checkout.utensil||0)-1))">−</button><b>'+(uHas?c.utensil:0)+'</b><button onclick="setUtensil((S.checkout.utensil||0)+1)">＋</button><small>$1/份</small></div>'+
     '</div></div>'+
     '<div class="field"><div class="lab">取餐時間 <span class="req">必選</span></div>'+slotsBox+'</div>'+
-    '<div class="field"><div class="lab">聯絡電話 <span class="req">必填</span></div><input id="phoneInput" class="inp" inputmode="numeric" placeholder="9123 4567" value="'+(c.phone||'')+'" oninput="S.checkout.phone=this.value">'+
+    '<div class="field"><div class="lab">聯絡電話 <span class="req">必填</span></div><input id="phoneInput" class="inp" inputmode="numeric" placeholder="9123 4567" value="'+(c.phone||'')+'" oninput="S.checkout.phone=this.value;chkGiftDebounced()">'+
       (c.phoneErr?'<div class="errline">'+c.phoneErr+'</div>':'<div class="hint">如餐點缺貨或有任何疑問，我們將會聯絡您。</div>')+'</div>'+
     (c.err?'<div class="errline">'+c.err+'</div>':'')+
     '<div class="cta-wrap"><button class="cont-btn" onclick="go(\'menu\')">＋ 繼續落單（再揀多個餐）</button>'+
+      ((S.giftNames&&S.giftNames.length)?'<div class="giftline">🎁 熊客回饋 · 本單免費贈品：<b>'+S.giftNames.map(esc).join('、')+'</b>（$0，付款後自動送出）</div>':'')+
       (promoOn()
         ? '<div class="promo-sum"><div class="pr-row"><span>原價</span><span>$'+total+'</span></div>'+
           '<div class="pr-row disc"><span>全單9折優惠</span><span>−$'+discAmount()+'</span></div>'+
@@ -896,6 +902,15 @@ function viewCheckout(){
 window.pickSlot=t=>{S.checkout.slot=t;S.checkout.err='';render();};
 window.setUtensil=n=>{S.checkout.utensil=n;render();};
 window.setOtype=t=>{S.checkout.otype=t;S.checkout.err='';render();};
+/* 熊客贈品：電話 valid + 本單滿$48 先查 pending 贈品（結帳頁顯示，付款後 trigger 自動送出） */
+function chkGift(){
+  const ph=(S.checkout.phone||'').replace(/\s/g,'');
+  if(!/^[2-9]\d{7}$/.test(ph)||cartTotal()<48){if(S.giftNames&&S.giftNames.length){S.giftNames=[];}S._giftFor='';return;}
+  if(S._giftFor===ph)return; S._giftFor=ph;
+  fetch(CFG.SUPABASE_URL+'/rest/v1/rpc/cb_loyalty_pending',{method:'POST',headers:{'Content-Type':'application/json',apikey:CFG.ANON,Authorization:'Bearer '+CFG.ANON},body:JSON.stringify({p_phone:ph})})
+    .then(r=>r.json()).then(d=>{S.giftNames=Array.isArray(d)?d:[];render();}).catch(()=>{});
+}
+var _giftT;window.chkGiftDebounced=function(){clearTimeout(_giftT);_giftT=setTimeout(chkGift,500);};
 
 function viewSuccess(){
   const o=S.lastOrder;
