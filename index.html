@@ -758,7 +758,7 @@ window.queryMyOrders=async function(){
 const IMG_BASE='https://kpjilykqswlogxhjmnwj.supabase.co/storage/v1/object/public/site/';
 const CURRY_PIC={c_butter:IMG_BASE+'curry-butter.png',c_king:IMG_BASE+'curry-king.png'};
 /* 抽獎獎品圖（by code）+ 熊客贈品圖（by 名） */
-const IMGV='?v=3'; /* 改圖後 bump 版本，避開 Safari/CDN 快取舊圖 */
+const IMGV='?v=4'; /* 改圖後 bump 版本，避開 Safari/CDN 快取舊圖 */
 const PRIZE_IMG={p_egg:IMG_BASE+'prize-egg.png'+IMGV,p_grand:IMG_BASE+'prize-grand.png'+IMGV,p_half:IMG_BASE+'prize-half.png'+IMGV,p_oyster:IMG_BASE+'prize-oyster.png'+IMGV,p_fishball:IMG_BASE+'prize-fishball.png'+IMGV};
 const GIFT_IMG={'咖喱燒賣魚蛋':IMG_BASE+'gift-siumai.png'+IMGV,'阿多波炸雞':IMG_BASE+'gift-adobo.png'+IMGV,'金屬羹 + 金屬筷子':IMG_BASE+'gift-metal.png'+IMGV};
 function isVoucherCode(c){return c==='p_grand'||c==='p_half';}
