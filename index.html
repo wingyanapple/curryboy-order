@@ -890,7 +890,7 @@ function viewCheckout(){
       (c.phoneErr?'<div class="errline">'+c.phoneErr+'</div>':'<div class="hint">如餐點缺貨或有任何疑問，我們將會聯絡您。</div>')+'</div>'+
     (c.err?'<div class="errline">'+c.err+'</div>':'')+
     '<div class="cta-wrap"><button class="cont-btn" onclick="go(\'menu\')">＋ 繼續落單（再揀多個餐）</button>'+
-      ((S.giftNames&&S.giftNames.length)?'<div class="giftline">🎁 熊客回饋 · 本單免費贈品：<b>'+S.giftNames.map(esc).join('、')+'</b>（$0，付款後自動送出）</div>':'')+
+      ((S.giftNames&&S.giftNames.length)?'<div class="giftline">消費換獎品活動 · 本單免費贈品：<b>'+S.giftNames.map(esc).join('、')+'</b>（$0，付款後自動送出）</div>':'')+
       (promoOn()
         ? '<div class="promo-sum"><div class="pr-row"><span>原價</span><span>$'+total+'</span></div>'+
           '<div class="pr-row disc"><span>全單9折優惠</span><span>−$'+discAmount()+'</span></div>'+
