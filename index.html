@@ -297,6 +297,12 @@
   .pball.win{background:var(--orange);color:#1a1208}
   .pball.lose{background:#555;color:#dcdcdc}
   @keyframes pballpop{0%{transform:scale(.3);opacity:0}100%{transform:scale(1);opacity:1}}
+  /* 大特寫：彈出時放到好大俾客睇清楚，再縮返細入 tray */
+  .big-overlay{position:fixed;inset:0;z-index:9998;display:flex;align-items:center;justify-content:center;pointer-events:none;background:rgba(0,0,0,.45)}
+  .big-ball{width:62vw;max-width:260px;height:62vw;max-height:260px;border-radius:50%;display:flex;align-items:center;justify-content:center;text-align:center;font-family:var(--pixel);font-size:15px;padding:22px;line-height:1.7;box-shadow:0 0 40px rgba(0,0,0,.6);animation:bigpop 1.9s ease forwards}
+  .big-ball.win{background:var(--orange);color:#1a1208}
+  .big-ball.lose{background:#555;color:#e2e2e2}
+  @keyframes bigpop{0%{transform:scale(0);opacity:0}16%{transform:scale(1.12);opacity:1}26%{transform:scale(1)}72%{transform:scale(1);opacity:1}100%{transform:scale(.22);opacity:0}}
   .draw-summary{margin-top:18px;font-weight:900;color:var(--gold);font-size:16px;line-height:1.6}
   .draw-note{margin-top:8px;font-size:12px;color:var(--muted);line-height:1.6}
   .cta{display:block;width:100%;text-align:center;font-family:var(--pixel);font-size:12px;color:#1a1208;background:var(--orange);border:none;border-radius:13px;padding:16px;box-shadow:4px 4px 0 #000}
@@ -999,9 +1005,14 @@ function drawPoll(){
 }
 /* 客撳一下「抽獎」彈一個波（結果已由後台定好，逐粒揭） */
 window.drawReveal=function(){
-  const d=S.draw; if(!d||d.state!=='play'||!d.prizes||d.shown>=d.prizes.length)return;
-  d.shown++; if(d.shown>=d.prizes.length)d.state='done';
-  render();
+  const d=S.draw; if(!d||d.state!=='play'||!d.prizes||d.shown>=d.prizes.length||d.big)return;
+  d.shown++; d.big=d.prizes[d.shown-1]; render();  // 大特寫彈出
+  setTimeout(function(){
+    if(!S.draw)return;
+    S.draw.big=null;
+    if(S.draw.shown>=S.draw.prizes.length)S.draw.state='done';
+    render();
+  },1900);
 };
 function drawSectionHTML(){
   const d=S.draw; if(!d||!d.state||d.state==='none')return '';
@@ -1010,13 +1021,14 @@ function drawSectionHTML(){
   const prizes=d.prizes||[]; const shown=prizes.slice(0,d.shown);
   if(shown.length)inner+='<div class="draw-tray">'+shown.map(p=>{const win=p.code&&p.code!=='none';return '<div class="pball '+(win?'win':'lose')+'">'+esc(p.name)+'</div>';}).join('')+'</div>';
   const remain=prizes.length-d.shown;
-  if(remain>0){inner+='<div class="draw-count">抽獎次數 剩 <b>'+remain+'</b> 次</div><button class="draw-btn" onclick="drawReveal()">抽獎</button>';}
+  if(remain>0){inner+='<div class="draw-count">抽獎次數 剩 <b>'+remain+'</b> 次</div><button class="draw-btn"'+(d.big?' disabled style="opacity:.5"':' onclick="drawReveal()"')+'>抽獎</button>';}
   else{
     const wins=prizes.filter(p=>p.code&&p.code!=='none');
     inner+='<div class="draw-summary">'+(wins.length?('恭喜！今次抽中 '+wins.length+' 份獎品！'):'今次冇中獎，多謝惠顧！')+'</div>';
     if(wins.length)inner+='<div class="draw-note">獎券已儲存喺你嘅電話號碼，下次用同一電話號碼落單即可使用。</div>';
   }
-  return '<div class="draw-box"><div class="draw-title">消費大抽獎</div>'+inner+'</div>';
+  const bigHTML=d.big?'<div class="big-overlay"><div class="big-ball '+((d.big.code&&d.big.code!=='none')?'win':'lose')+'">'+esc(d.big.name)+'</div></div>':'';
+  return '<div class="draw-box"><div class="draw-title">消費大抽獎</div>'+inner+'</div>'+bigHTML;
 }
 function viewSuccess(){
   const o=S.lastOrder;
