@@ -274,21 +274,23 @@
   .giftline b{color:#fff}
   .giftbtn{width:100%;margin-top:10px;padding:12px;border:1px solid var(--orange);border-radius:11px;background:#160f0a;color:var(--orange);font-weight:800;font-size:14px}
   .giftmsg{margin-top:10px;color:var(--muted);font-size:13px;text-align:center}
-  /* 消費大抽獎：六合彩攪珠 */
-  .draw-box{width:calc(100% - 32px);max-width:360px;margin:8px auto 16px;background:#160f0a;border:1px solid var(--orange);border-radius:16px;padding:16px 14px;text-align:center}
-  .draw-title{font-weight:900;color:var(--orange);font-size:16px;letter-spacing:2px;margin-bottom:12px}
-  .drum{position:relative;width:150px;height:150px;margin:0 auto;border-radius:50%;border:5px solid var(--gold);background:radial-gradient(circle at 40% 35%,#3a2a14,#0e0b08);overflow:hidden}
-  .drum.spin{animation:drumshake .45s infinite}
-  @keyframes drumshake{0%,100%{transform:rotate(-6deg)}50%{transform:rotate(6deg)}}
-  .drum i{position:absolute;width:15px;height:15px;border-radius:50%;animation:bob .6s infinite;box-shadow:inset -2px -2px 3px rgba(0,0,0,.35)}
-  @keyframes bob{0%,100%{transform:translateY(0)}50%{transform:translateY(-16px)}}
-  .draw-status{margin-top:12px;color:var(--gold);font-weight:800;font-size:14px}
-  .draw-tray{display:flex;flex-wrap:wrap;gap:9px;justify-content:center;margin-top:14px}
-  .pball{width:90px;height:90px;border-radius:50%;display:flex;align-items:center;justify-content:center;text-align:center;font-size:11px;font-weight:800;padding:6px;line-height:1.25;transform-origin:center;animation:pop .45s cubic-bezier(.2,1.5,.4,1)}
-  .pball.win{background:radial-gradient(circle at 38% 30%,#ffe08a,#e8951e);color:#2a1800;border:2px solid #fff;box-shadow:0 0 14px rgba(232,149,30,.5)}
-  .pball.lose{background:radial-gradient(circle at 38% 30%,#3a3a3a,#171717);color:#9a9a9a;border:2px solid #444}
-  @keyframes pop{0%{transform:scale(0)}68%{transform:scale(1.28)}100%{transform:scale(1)}}
-  .draw-summary{margin-top:14px;font-weight:900;color:var(--cream2);font-size:15px}
+  /* 消費大抽獎：像素風抽獎箱（靜態箱 + 撳掣逐粒彈） */
+  .draw-box{width:calc(100% - 32px);max-width:360px;margin:8px auto 16px;background:#160f0a;border:2px solid var(--orange);border-radius:14px;padding:18px 14px;text-align:center}
+  .draw-title{font-weight:900;color:var(--orange);font-size:15px;letter-spacing:3px;margin-bottom:16px}
+  .lotto{width:128px;height:128px;margin:0 auto;border-radius:50%;border:5px solid var(--gold);background:radial-gradient(circle at 38% 32%,#2a1d0e,#0e0b08);box-shadow:5px 5px 0 #000;display:flex;align-items:center;justify-content:center}
+  .lotto b{font-family:var(--pixel);font-size:40px;color:var(--gold);line-height:1}
+  .lotto.pulse{animation:lottopulse .16s steps(2)}
+  @keyframes lottopulse{50%{transform:translate(3px,3px)}}
+  .draw-count{margin-top:16px;color:var(--cream2);font-size:14px;font-weight:700}
+  .draw-count b{color:var(--gold);font-family:var(--pixel);font-size:20px;margin:0 5px}
+  .draw-btn{font-weight:900;font-size:15px;color:#1a1208;background:var(--orange);border:none;border-radius:11px;padding:14px 38px;margin-top:12px;box-shadow:4px 4px 0 #000}
+  .draw-btn:active{transform:translate(4px,4px);box-shadow:none}
+  .draw-tray{display:flex;flex-wrap:wrap;gap:10px;justify-content:center;margin-top:16px}
+  .pball{width:92px;height:92px;border-radius:50%;display:flex;align-items:center;justify-content:center;text-align:center;font-size:11px;font-weight:800;padding:7px;line-height:1.3;box-shadow:3px 3px 0 #000;animation:pballpop .28s steps(4)}
+  .pball.win{background:radial-gradient(circle at 38% 30%,#ffe08a,#e8951e);color:#2a1800;border:3px solid #fff}
+  .pball.lose{background:radial-gradient(circle at 38% 30%,#444,#1c1c1c);color:#9a9a9a;border:3px solid #555}
+  @keyframes pballpop{0%{transform:scale(.2)}100%{transform:scale(1)}}
+  .draw-summary{margin-top:16px;font-weight:900;color:var(--gold);font-size:15px;line-height:1.6}
   .draw-note{margin-top:8px;font-size:12px;color:var(--muted);line-height:1.6}
   .cta{display:block;width:100%;text-align:center;font-family:var(--pixel);font-size:12px;color:#1a1208;background:var(--orange);border:none;border-radius:13px;padding:16px;box-shadow:4px 4px 0 #000}
   .cta:disabled{opacity:.45;box-shadow:none}
@@ -932,47 +934,39 @@ window.checkGiftBtn=function(){
     .catch(()=>{S.giftLoading=false;S.giftMsg='查詢失敗，請再試';render();});
 };
 
-/* ---------- 消費大抽獎（成功頁攪珠） ---------- */
-function drumBalls(){
-  const cols=['#f4c044','#e5484d','#fff','#e8951e','#30a46c','#5b8def','#ff7ac6'];
-  let s='';
-  for(let i=0;i<18;i++){
-    const x=(6+Math.random()*80).toFixed(1), y=(6+Math.random()*80).toFixed(1);
-    const dur=(0.45+Math.random()*0.5).toFixed(2), dl=(Math.random()*0.7).toFixed(2);
-    s+='<i style="left:'+x+'%;top:'+y+'%;background:'+cols[i%cols.length]+';animation-duration:'+dur+'s;animation-delay:'+dl+'s"></i>';
-  }
-  return s;
-}
+/* ---------- 消費大抽獎（成功頁：靜態抽獎箱 + 撳掣逐粒彈） ---------- */
 function drawStart(no){
   if(!no||no==='—'){S.draw={state:'none'};return;}
-  S.draw={state:'polling',no:no,prizes:null,shown:0,tries:0,drumHTML:drumBalls()};
+  S.draw={state:'polling',no:no,prizes:null,shown:0,tries:0,pulse:false};
   drawPoll();
 }
 function drawPoll(){
   const d=S.draw; if(!d||d.state!=='polling')return;
   fetch(CFG.SUPABASE_URL+'/rest/v1/rpc/cb_draw_result',{method:'POST',headers:{'Content-Type':'application/json',apikey:CFG.ANON,Authorization:'Bearer '+CFG.ANON},body:JSON.stringify({p_order_no:d.no})})
     .then(r=>r.json()).then(arr=>{
-      if(Array.isArray(arr)&&arr.length){d.prizes=arr;d.state='revealing';d.shown=0;render();revealNext();}
+      if(Array.isArray(arr)&&arr.length){d.prizes=arr;d.state='play';d.shown=0;render();}
       else{d.tries++; if(d.tries<16)setTimeout(drawPoll,1500); else{d.state='none';render();}}
     }).catch(()=>{d.tries++; if(d.tries<16)setTimeout(drawPoll,1500); else{d.state='none';render();}});
 }
-function revealNext(){
-  const d=S.draw; if(!d||!d.prizes)return;
-  if(d.shown>=d.prizes.length){d.state='done';render();return;}
-  d.shown++; render(); setTimeout(revealNext,1100);
-}
+/* 客撳一下「抽獎」彈一個波（結果已由後台定好，逐粒揭） */
+window.drawReveal=function(){
+  const d=S.draw; if(!d||d.state!=='play'||!d.prizes||d.shown>=d.prizes.length)return;
+  d.shown++; if(d.shown>=d.prizes.length)d.state='done';
+  d.pulse=true; render();
+  setTimeout(function(){if(S.draw&&S.draw.pulse){S.draw.pulse=false;render();}},200);
+};
 function drawSectionHTML(){
   const d=S.draw; if(!d||!d.state||d.state==='none')return '';
-  let inner='<div class="drum'+(d.state==='polling'?' spin':'')+'">'+(d.drumHTML||'')+'</div>';
-  if(d.state==='polling'){inner+='<div class="draw-status">開獎中… 攪珠緊</div>';}
+  let inner='<div class="lotto'+(d.pulse?' pulse':'')+'"><b>?</b></div>';
+  if(d.state==='polling'){inner+='<div class="draw-count">開獎準備中…</div>';return '<div class="draw-box"><div class="draw-title">消費大抽獎</div>'+inner+'</div>';}
+  const prizes=d.prizes||[]; const shown=prizes.slice(0,d.shown);
+  if(shown.length)inner+='<div class="draw-tray">'+shown.map(p=>{const win=p.code&&p.code!=='none';return '<div class="pball '+(win?'win':'lose')+'">'+esc(p.name)+'</div>';}).join('')+'</div>';
+  const remain=prizes.length-d.shown;
+  if(remain>0){inner+='<div class="draw-count">抽獎次數 剩 <b>'+remain+'</b> 次</div><button class="draw-btn" onclick="drawReveal()">抽獎</button>';}
   else{
-    const shown=(d.prizes||[]).slice(0,d.shown);
-    inner+='<div class="draw-tray">'+shown.map(p=>{const win=p.code&&p.code!=='none';return '<div class="pball '+(win?'win':'lose')+'">'+esc(p.name)+'</div>';}).join('')+'</div>';
-    if(d.state==='done'){
-      const wins=(d.prizes||[]).filter(p=>p.code&&p.code!=='none');
-      inner+='<div class="draw-summary">'+(wins.length?('恭喜！今次抽中 '+wins.length+' 份獎品！'):'今次冇中獎，多謝惠顧！')+'</div>';
-      if(wins.length)inner+='<div class="draw-note">獎券已儲存喺你嘅電話號碼，下次用同一電話號碼落單即可使用。</div>';
-    }
+    const wins=prizes.filter(p=>p.code&&p.code!=='none');
+    inner+='<div class="draw-summary">'+(wins.length?('恭喜！今次抽中 '+wins.length+' 份獎品！'):'今次冇中獎，多謝惠顧！')+'</div>';
+    if(wins.length)inner+='<div class="draw-note">獎券已儲存喺你嘅電話號碼，下次用同一電話號碼落單即可使用。</div>';
   }
   return '<div class="draw-box"><div class="draw-title">消費大抽獎</div>'+inner+'</div>';
 }
