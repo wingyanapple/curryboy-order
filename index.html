@@ -277,15 +277,11 @@
   /* 消費大抽獎：六合彩攪珠 */
   .draw-box{width:calc(100% - 32px);max-width:360px;margin:8px auto 16px;background:#160f0a;border:1px solid var(--orange);border-radius:16px;padding:16px 14px;text-align:center}
   .draw-title{font-weight:900;color:var(--orange);font-size:16px;letter-spacing:2px;margin-bottom:12px}
-  .drum{position:relative;width:118px;height:118px;margin:0 auto;border-radius:50%;border:4px solid var(--gold);background:radial-gradient(circle at 40% 35%,#3a2a14,#0e0b08);overflow:hidden}
-  .drum.spin{animation:drumshake .5s infinite}
-  @keyframes drumshake{0%,100%{transform:rotate(-5deg)}50%{transform:rotate(5deg)}}
-  .drum i{position:absolute;width:16px;height:16px;border-radius:50%}
-  .drum i:nth-child(1){left:20%;top:24%;background:var(--gold);animation:bob .6s infinite}
-  .drum i:nth-child(2){left:56%;top:20%;background:#e5484d;animation:bob .72s infinite .1s}
-  .drum i:nth-child(3){left:34%;top:54%;background:#fff;animation:bob .54s infinite .2s}
-  .drum i:nth-child(4){left:62%;top:56%;background:var(--orange);animation:bob .66s infinite .15s}
-  @keyframes bob{0%,100%{transform:translateY(0)}50%{transform:translateY(-15px)}}
+  .drum{position:relative;width:150px;height:150px;margin:0 auto;border-radius:50%;border:5px solid var(--gold);background:radial-gradient(circle at 40% 35%,#3a2a14,#0e0b08);overflow:hidden}
+  .drum.spin{animation:drumshake .45s infinite}
+  @keyframes drumshake{0%,100%{transform:rotate(-6deg)}50%{transform:rotate(6deg)}}
+  .drum i{position:absolute;width:15px;height:15px;border-radius:50%;animation:bob .6s infinite;box-shadow:inset -2px -2px 3px rgba(0,0,0,.35)}
+  @keyframes bob{0%,100%{transform:translateY(0)}50%{transform:translateY(-16px)}}
   .draw-status{margin-top:12px;color:var(--gold);font-weight:800;font-size:14px}
   .draw-tray{display:flex;flex-wrap:wrap;gap:9px;justify-content:center;margin-top:14px}
   .pball{width:90px;height:90px;border-radius:50%;display:flex;align-items:center;justify-content:center;text-align:center;font-size:11px;font-weight:800;padding:6px;line-height:1.25;transform-origin:center;animation:pop .45s cubic-bezier(.2,1.5,.4,1)}
@@ -937,9 +933,19 @@ window.checkGiftBtn=function(){
 };
 
 /* ---------- 消費大抽獎（成功頁攪珠） ---------- */
+function drumBalls(){
+  const cols=['#f4c044','#e5484d','#fff','#e8951e','#30a46c','#5b8def','#ff7ac6'];
+  let s='';
+  for(let i=0;i<18;i++){
+    const x=(6+Math.random()*80).toFixed(1), y=(6+Math.random()*80).toFixed(1);
+    const dur=(0.45+Math.random()*0.5).toFixed(2), dl=(Math.random()*0.7).toFixed(2);
+    s+='<i style="left:'+x+'%;top:'+y+'%;background:'+cols[i%cols.length]+';animation-duration:'+dur+'s;animation-delay:'+dl+'s"></i>';
+  }
+  return s;
+}
 function drawStart(no){
   if(!no||no==='—'){S.draw={state:'none'};return;}
-  S.draw={state:'polling',no:no,prizes:null,shown:0,tries:0};
+  S.draw={state:'polling',no:no,prizes:null,shown:0,tries:0,drumHTML:drumBalls()};
   drawPoll();
 }
 function drawPoll(){
@@ -957,7 +963,7 @@ function revealNext(){
 }
 function drawSectionHTML(){
   const d=S.draw; if(!d||!d.state||d.state==='none')return '';
-  let inner='<div class="drum'+(d.state==='polling'?' spin':'')+'"><i></i><i></i><i></i><i></i></div>';
+  let inner='<div class="drum'+(d.state==='polling'?' spin':'')+'">'+(d.drumHTML||'')+'</div>';
   if(d.state==='polling'){inner+='<div class="draw-status">開獎中… 攪珠緊</div>';}
   else{
     const shown=(d.prizes||[]).slice(0,d.shown);
