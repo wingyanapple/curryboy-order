@@ -300,7 +300,7 @@
   .tball{width:104px;height:104px;border-radius:50%;display:flex;align-items:center;justify-content:center;overflow:hidden;animation:pballpop .18s ease-out}
   .tball.win{background:radial-gradient(circle at 42% 38%,#ffb64d,#e8951e)}
   .tball.win img{width:94%;height:94%;object-fit:contain;image-rendering:pixelated}
-  .tball.lose{background:#555;color:#dcdcdc;font-weight:800;font-size:12px}
+  .tball.logo{background:#fff var(--logo) center/74% no-repeat;border:2px solid #f0d9b4}
   .tvou{width:104px;image-rendering:pixelated;animation:pballpop .18s ease-out}
   @keyframes pballpop{0%{transform:scale(.3);opacity:0}100%{transform:scale(1);opacity:1}}
   /* 大特寫：彈出時放到好大俾客睇清楚，再縮返細入 tray */
@@ -309,7 +309,7 @@
   .big-circle{width:66vw;max-width:280px;height:66vw;max-height:280px;border-radius:50%;display:flex;align-items:center;justify-content:center;overflow:hidden;box-shadow:0 0 40px rgba(0,0,0,.6)}
   .big-circle.win{background:radial-gradient(circle at 42% 38%,#ffb64d,#e8951e)}
   .big-circle.win img{width:92%;height:92%;object-fit:contain;image-rendering:pixelated}
-  .big-circle.lose{background:#555;color:#e2e2e2;font-family:var(--pixel);font-size:16px;text-align:center;padding:24px;line-height:1.7}
+  .big-circle.logo{background:#fff var(--logo) center/76% no-repeat;border:3px solid #f0d9b4}
   .big-vou{width:72vw;max-width:320px;image-rendering:pixelated;box-shadow:0 0 40px rgba(0,0,0,.6)}
   .big-cap{font-weight:900;color:#fff;font-size:16px;text-align:center;text-shadow:1px 1px 0 #000}
   @keyframes bigpop{0%{transform:scale(0);opacity:0}16%{transform:scale(1.1);opacity:1}26%{transform:scale(1)}72%{transform:scale(1);opacity:1}100%{transform:scale(.22);opacity:0}}
@@ -1032,13 +1032,13 @@ function trayItem(p){
   const win=p.code&&p.code!=='none';
   if(isVoucherCode(p.code))return '<div class="tcell"><img class="tvou" src="'+PRIZE_IMG[p.code]+'" alt=""><small>'+esc(p.name)+'</small></div>';
   if(win&&PRIZE_IMG[p.code])return '<div class="tcell"><div class="tball win"><img src="'+PRIZE_IMG[p.code]+'" alt=""></div><small>'+esc(p.name)+'</small></div>';
-  return '<div class="tcell"><div class="tball lose">多謝</div><small>多謝惠顧</small></div>';
+  return '<div class="tcell"><div class="tball logo"></div><small>多謝惠顧</small></div>';
 }
 function bigItem(p){
   const win=p.code&&p.code!=='none';
   if(isVoucherCode(p.code))return '<div class="big-wrap"><img class="big-vou" src="'+PRIZE_IMG[p.code]+'" alt=""><div class="big-cap">'+esc(p.name)+'</div></div>';
   if(win&&PRIZE_IMG[p.code])return '<div class="big-wrap"><div class="big-circle win"><img src="'+PRIZE_IMG[p.code]+'" alt=""></div><div class="big-cap">'+esc(p.name)+'</div></div>';
-  return '<div class="big-wrap"><div class="big-circle lose">多謝惠顧</div></div>';
+  return '<div class="big-wrap"><div class="big-circle logo"></div><div class="big-cap">多謝惠顧</div></div>';
 }
 function drawSectionHTML(){
   const d=S.draw; if(!d||!d.state||d.state==='none')return '';
