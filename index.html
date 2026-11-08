@@ -897,13 +897,12 @@ function viewCart(){
     return '<div class="citem"><div class="ct">'+it.label+'</div><div class="cd">'+it.desc+'</div>'+noteLine+
       '<div class="cr"><div class="acts"><div class="qty"><button onclick="cartQty('+idx+',-1)">−</button><b>'+it.qty+'</b><button onclick="cartQty('+idx+',1)">＋</button></div>'+editBtn+'<button class="del" onclick="cartDel('+idx+')">刪除</button></div><div class="price">$'+(it.unit*it.qty)+'</div></div></div>';
   }).join('');
-  const vdisc=voucherDiscount(cartTotal());
   const vfoods=(S.vch.foods||[]).map(vchName).filter(Boolean);
-  const paySum=(vdisc>0||vfoods.length)
-    ? '<div class="promo-sum"><div class="pr-row"><span>小計</span><span>$'+cartTotal()+'</span></div>'+
-      (vdisc>0?'<div class="pr-row disc"><span>半價券（約）</span><span>−$'+vdisc+'</span></div>':'')+
-      (vfoods.length?'<div class="pr-note">免費獎品：'+vfoods.map(esc).join('、')+'</div>':'')+
-      '<div class="pr-row fin"><span>應付（約）</span><span>$'+(cartTotal()-vdisc)+'</span></div></div>'
+  const paySum=(S.vch.half||vfoods.length)
+    ? '<div class="promo-sum"><div class="pr-row fin"><span>小計</span><span>$'+cartTotal()+'</span></div>'+
+      (S.vch.half?'<div class="pr-note">已揀半價券 · 結帳時自動打半價</div>':'')+
+      (vfoods.length?'<div class="pr-note">免費獎品：'+vfoods.map(esc).join('、')+'（$0）</div>':'')+
+      '<div class="pr-note">確實應付會喺下一頁（結帳）顯示，連餐具一齊計。</div></div>'
     : '<div class="pay"><b>小計</b><span class="v">$'+cartTotal()+'</span></div>';
   return appbar("go('menu')")+'<div class="b-title">購物車 <em>CART</em></div>'+items+
     voucherSectionHTML()+
