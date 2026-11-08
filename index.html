@@ -272,6 +272,8 @@
   .promo-sum .pr-note{font-size:11px;color:var(--muted);padding:2px 0 4px;line-height:1.5}
   .giftline{background:#1a1205;border:1px solid var(--orange);border-radius:12px;padding:10px 13px;margin-top:10px;color:var(--gold);font-size:13px;line-height:1.6}
   .giftline b{color:#fff}
+  .gift-imgs{display:flex;gap:10px;justify-content:center;margin-top:10px;flex-wrap:wrap}
+  .gift-imgs img{width:88px;image-rendering:pixelated}
   .giftbtn{width:100%;margin-top:10px;padding:12px;border:1px solid var(--orange);border-radius:11px;background:#160f0a;color:var(--orange);font-weight:800;font-size:14px}
   .giftmsg{margin-top:10px;color:var(--muted);font-size:13px;text-align:center}
   .vch-box{width:calc(100% - 32px);max-width:400px;margin:4px auto 10px;background:#160f0a;border:1px solid var(--line);border-radius:14px;padding:14px}
@@ -293,16 +295,24 @@
   .draw-btn{font-weight:900;font-size:17px;color:#1a1208;background:var(--orange);border:none;border-radius:12px;padding:16px 44px;margin-top:14px;box-shadow:4px 4px 0 #000}
   .draw-btn:active{transform:translate(4px,4px);box-shadow:none}
   .draw-tray{display:flex;flex-wrap:wrap;gap:12px;justify-content:center;margin-top:18px}
-  .pball{width:104px;height:104px;border-radius:50%;display:flex;align-items:center;justify-content:center;text-align:center;font-family:var(--pixel);font-size:10px;padding:8px;line-height:1.5;animation:pballpop .18s ease-out}
-  .pball.win{background:var(--orange);color:#1a1208}
-  .pball.lose{background:#555;color:#dcdcdc}
+  .tcell{display:flex;flex-direction:column;align-items:center;gap:5px;width:104px}
+  .tcell small{color:var(--cream2);font-size:11px;text-align:center;line-height:1.3}
+  .tball{width:104px;height:104px;border-radius:50%;display:flex;align-items:center;justify-content:center;overflow:hidden;animation:pballpop .18s ease-out}
+  .tball.win{background:radial-gradient(circle at 42% 38%,#ffb64d,#e8951e)}
+  .tball.win img{width:94%;height:94%;object-fit:contain;image-rendering:pixelated}
+  .tball.lose{background:#555;color:#dcdcdc;font-weight:800;font-size:12px}
+  .tvou{width:104px;image-rendering:pixelated;animation:pballpop .18s ease-out}
   @keyframes pballpop{0%{transform:scale(.3);opacity:0}100%{transform:scale(1);opacity:1}}
   /* 大特寫：彈出時放到好大俾客睇清楚，再縮返細入 tray */
   .big-overlay{position:fixed;inset:0;z-index:9998;display:flex;align-items:center;justify-content:center;pointer-events:none;background:rgba(0,0,0,.45)}
-  .big-ball{width:62vw;max-width:260px;height:62vw;max-height:260px;border-radius:50%;display:flex;align-items:center;justify-content:center;text-align:center;font-family:var(--pixel);font-size:15px;padding:22px;line-height:1.7;box-shadow:0 0 40px rgba(0,0,0,.6);animation:bigpop 1.9s ease forwards}
-  .big-ball.win{background:var(--orange);color:#1a1208}
-  .big-ball.lose{background:#555;color:#e2e2e2}
-  @keyframes bigpop{0%{transform:scale(0);opacity:0}16%{transform:scale(1.12);opacity:1}26%{transform:scale(1)}72%{transform:scale(1);opacity:1}100%{transform:scale(.22);opacity:0}}
+  .big-wrap{display:flex;flex-direction:column;align-items:center;gap:12px;animation:bigpop 1.9s ease forwards}
+  .big-circle{width:66vw;max-width:280px;height:66vw;max-height:280px;border-radius:50%;display:flex;align-items:center;justify-content:center;overflow:hidden;box-shadow:0 0 40px rgba(0,0,0,.6)}
+  .big-circle.win{background:radial-gradient(circle at 42% 38%,#ffb64d,#e8951e)}
+  .big-circle.win img{width:92%;height:92%;object-fit:contain;image-rendering:pixelated}
+  .big-circle.lose{background:#555;color:#e2e2e2;font-family:var(--pixel);font-size:16px;text-align:center;padding:24px;line-height:1.7}
+  .big-vou{width:72vw;max-width:320px;image-rendering:pixelated;box-shadow:0 0 40px rgba(0,0,0,.6)}
+  .big-cap{font-weight:900;color:#fff;font-size:16px;text-align:center;text-shadow:1px 1px 0 #000}
+  @keyframes bigpop{0%{transform:scale(0);opacity:0}16%{transform:scale(1.1);opacity:1}26%{transform:scale(1)}72%{transform:scale(1);opacity:1}100%{transform:scale(.22);opacity:0}}
   .draw-summary{margin-top:18px;font-weight:900;color:var(--gold);font-size:16px;line-height:1.6}
   .draw-note{margin-top:8px;font-size:12px;color:var(--muted);line-height:1.6}
   .cta{display:block;width:100%;text-align:center;font-family:var(--pixel);font-size:12px;color:#1a1208;background:var(--orange);border:none;border-radius:13px;padding:16px;box-shadow:4px 4px 0 #000}
@@ -747,6 +757,10 @@ window.queryMyOrders=async function(){
 
 const IMG_BASE='https://kpjilykqswlogxhjmnwj.supabase.co/storage/v1/object/public/site/';
 const CURRY_PIC={c_butter:IMG_BASE+'curry-butter.png',c_king:IMG_BASE+'curry-king.png'};
+/* 抽獎獎品圖（by code）+ 熊客贈品圖（by 名） */
+const PRIZE_IMG={p_egg:IMG_BASE+'prize-egg.png',p_grand:IMG_BASE+'prize-grand.png',p_half:IMG_BASE+'prize-half.png',p_oyster:IMG_BASE+'prize-oyster.png',p_fishball:IMG_BASE+'prize-fishball.png'};
+const GIFT_IMG={'咖喱燒賣魚蛋':IMG_BASE+'gift-siumai.png','阿多波炸雞':IMG_BASE+'gift-adobo.png','金屬羹 + 金屬筷子':IMG_BASE+'gift-metal.png'};
+function isVoucherCode(c){return c==='p_grand'||c==='p_half';}
 window.openCurryPic=id=>{const pic=CURRY_PIC[id];if(!pic)return;$('overlay').innerHTML='<div class="modal-bg" onclick="closeCurryPic()"><img class="cpic-full" src="'+pic+'" alt=""></div>';};
 window.closeCurryPic=()=>{$('overlay').innerHTML='';};
 function viewHome(){
@@ -959,7 +973,7 @@ function viewCheckout(){
     '<div class="field"><div class="lab">聯絡電話 <span class="req">必填</span></div><input id="phoneInput" class="inp" inputmode="numeric" placeholder="9123 4567" value="'+(c.phone||'')+'" oninput="S.checkout.phone=this.value;S.giftNames=[];S.giftMsg=\'\'">'+
       (c.phoneErr?'<div class="errline">'+c.phoneErr+'</div>':'<div class="hint">如餐點缺貨或有任何疑問，我們將會聯絡您。</div>')+
       '<button class="giftbtn" onclick="checkGiftBtn()">'+(S.giftLoading?'查緊…':'查我有冇贈品 / 優惠券')+'</button>'+
-      ((S.giftNames&&S.giftNames.length)?'<div class="giftline">消費換獎品活動 · 你有免費贈品：<b>'+S.giftNames.map(esc).join('、')+'</b>'+(cartTotal()>=48?'（本單會自動送出，$0）':'（本單滿 $48 自動送出；你而家 $'+cartTotal()+'，仲差 $'+(48-cartTotal())+'）')+'</div>':(S.giftMsg?'<div class="giftmsg">'+esc(S.giftMsg)+'</div>':''))+
+      ((S.giftNames&&S.giftNames.length)?'<div class="giftline">消費換獎品活動 · 你有免費贈品：<b>'+S.giftNames.map(esc).join('、')+'</b>'+(cartTotal()>=48?'（本單會自動送出，$0）':'（本單滿 $48 自動送出；你而家 $'+cartTotal()+'，仲差 $'+(48-cartTotal())+'）')+(S.giftNames.some(n=>GIFT_IMG[n])?'<div class="gift-imgs">'+S.giftNames.map(n=>GIFT_IMG[n]?'<img src="'+GIFT_IMG[n]+'" alt="'+esc(n)+'">':'').join('')+'</div>':'')+'</div>':(S.giftMsg?'<div class="giftmsg">'+esc(S.giftMsg)+'</div>':''))+
     '</div>'+
     (c.err?'<div class="errline">'+c.err+'</div>':'')+
     '<div class="cta-wrap"><button class="cont-btn" onclick="go(\'menu\')">＋ 繼續落單（再揀多個餐）</button>'+
@@ -1014,12 +1028,24 @@ window.drawReveal=function(){
     render();
   },1900);
 };
+function trayItem(p){
+  const win=p.code&&p.code!=='none';
+  if(isVoucherCode(p.code))return '<div class="tcell"><img class="tvou" src="'+PRIZE_IMG[p.code]+'" alt=""><small>'+esc(p.name)+'</small></div>';
+  if(win&&PRIZE_IMG[p.code])return '<div class="tcell"><div class="tball win"><img src="'+PRIZE_IMG[p.code]+'" alt=""></div><small>'+esc(p.name)+'</small></div>';
+  return '<div class="tcell"><div class="tball lose">多謝</div><small>多謝惠顧</small></div>';
+}
+function bigItem(p){
+  const win=p.code&&p.code!=='none';
+  if(isVoucherCode(p.code))return '<div class="big-wrap"><img class="big-vou" src="'+PRIZE_IMG[p.code]+'" alt=""><div class="big-cap">'+esc(p.name)+'</div></div>';
+  if(win&&PRIZE_IMG[p.code])return '<div class="big-wrap"><div class="big-circle win"><img src="'+PRIZE_IMG[p.code]+'" alt=""></div><div class="big-cap">'+esc(p.name)+'</div></div>';
+  return '<div class="big-wrap"><div class="big-circle lose">多謝惠顧</div></div>';
+}
 function drawSectionHTML(){
   const d=S.draw; if(!d||!d.state||d.state==='none')return '';
   let inner='<div class="lotto"><b>?</b></div>';
   if(d.state==='polling'){inner+='<div class="draw-count">開獎準備中…</div>';return '<div class="draw-box"><div class="draw-title">消費大抽獎</div>'+inner+'</div>';}
   const prizes=d.prizes||[]; const shown=prizes.slice(0,d.shown);
-  if(shown.length)inner+='<div class="draw-tray">'+shown.map(p=>{const win=p.code&&p.code!=='none';return '<div class="pball '+(win?'win':'lose')+'">'+esc(p.name)+'</div>';}).join('')+'</div>';
+  if(shown.length)inner+='<div class="draw-tray">'+shown.map(trayItem).join('')+'</div>';
   const remain=prizes.length-d.shown;
   if(remain>0){inner+='<div class="draw-count">抽獎次數 剩 <b>'+remain+'</b> 次</div><button class="draw-btn"'+(d.big?' disabled style="opacity:.5"':' onclick="drawReveal()"')+'>抽獎</button>';}
   else{
@@ -1027,7 +1053,7 @@ function drawSectionHTML(){
     inner+='<div class="draw-summary">'+(wins.length?('恭喜！今次抽中 '+wins.length+' 份獎品！'):'今次冇中獎，多謝惠顧！')+'</div>';
     if(wins.length)inner+='<div class="draw-note">獎券已儲存喺你嘅電話號碼，下次用同一電話號碼落單即可使用。</div>';
   }
-  const bigHTML=d.big?'<div class="big-overlay"><div class="big-ball '+((d.big.code&&d.big.code!=='none')?'win':'lose')+'">'+esc(d.big.name)+'</div></div>':'';
+  const bigHTML=d.big?'<div class="big-overlay">'+bigItem(d.big)+'</div>':'';
   return '<div class="draw-box"><div class="draw-title">消費大抽獎</div>'+inner+'</div>'+bigHTML;
 }
 function viewSuccess(){
