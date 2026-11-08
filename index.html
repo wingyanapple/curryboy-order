@@ -934,7 +934,9 @@ function voucherSectionHTML(){
       '<button class="giftbtn" onclick="chkVouchers()">查我有冇優惠券 / 獎品</button>';
     if(v.msg)inner+='<div class="vch-msg">'+esc(v.msg)+'</div>';
   }else if(!v.list.length){
-    inner='<div class="vch-msg">呢個電話暫時未有優惠券</div><button class="giftbtn" onclick="S.vch.list=null;render()">換電話查</button>';
+    inner='<input id="vchPhone" class="inp" inputmode="numeric" placeholder="輸入電話查你嘅優惠券" value="'+(v.phone||S.checkout.phone||'')+'">'+
+      '<button class="giftbtn" onclick="chkVouchers()">查我有冇優惠券 / 獎品</button>'+
+      '<div class="vch-msg">呢個電話暫時未有優惠券</div>';
   }else{
     inner=v.list.map(vo=>{
       const isHalf=(vo.vtype==='voucher_grand'||vo.vtype==='voucher_half');
