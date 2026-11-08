@@ -298,18 +298,18 @@
   .tcell{display:flex;flex-direction:column;align-items:center;gap:5px;width:104px}
   .tcell small{color:var(--cream2);font-size:11px;text-align:center;line-height:1.3}
   .tball{width:104px;height:104px;border-radius:50%;display:flex;align-items:center;justify-content:center;overflow:hidden;animation:pballpop .18s ease-out}
-  .tball.win{background:radial-gradient(circle at 42% 38%,#ffb64d,#e8951e)}
+  .tball.win{background:#fff;border:2px solid #f0d9b4}
   .tball.win img{width:94%;height:94%;object-fit:contain;image-rendering:pixelated}
-  .tball.logo{background:#fff var(--logo) center/74% no-repeat;border:2px solid #f0d9b4}
+  .tball.logo{background:#3d2416 var(--logo) center/72% no-repeat;border:2px solid #e8c9a0}
   .tvou{width:104px;image-rendering:pixelated;animation:pballpop .18s ease-out}
   @keyframes pballpop{0%{transform:scale(.3);opacity:0}100%{transform:scale(1);opacity:1}}
   /* 大特寫：彈出時放到好大俾客睇清楚，再縮返細入 tray */
   .big-overlay{position:fixed;inset:0;z-index:9998;display:flex;align-items:center;justify-content:center;pointer-events:none;background:rgba(0,0,0,.45)}
   .big-wrap{display:flex;flex-direction:column;align-items:center;gap:12px;animation:bigpop 1.9s ease forwards}
   .big-circle{width:66vw;max-width:280px;height:66vw;max-height:280px;border-radius:50%;display:flex;align-items:center;justify-content:center;overflow:hidden;box-shadow:0 0 40px rgba(0,0,0,.6)}
-  .big-circle.win{background:radial-gradient(circle at 42% 38%,#ffb64d,#e8951e)}
+  .big-circle.win{background:#fff;border:3px solid #f0d9b4}
   .big-circle.win img{width:92%;height:92%;object-fit:contain;image-rendering:pixelated}
-  .big-circle.logo{background:#fff var(--logo) center/76% no-repeat;border:3px solid #f0d9b4}
+  .big-circle.logo{background:#3d2416 var(--logo) center/74% no-repeat;border:3px solid #e8c9a0}
   .big-vou{width:72vw;max-width:320px;image-rendering:pixelated;box-shadow:0 0 40px rgba(0,0,0,.6)}
   .big-cap{font-weight:900;color:#fff;font-size:16px;text-align:center;text-shadow:1px 1px 0 #000}
   @keyframes bigpop{0%{transform:scale(0);opacity:0}16%{transform:scale(1.1);opacity:1}26%{transform:scale(1)}72%{transform:scale(1);opacity:1}100%{transform:scale(.22);opacity:0}}
@@ -758,8 +758,9 @@ window.queryMyOrders=async function(){
 const IMG_BASE='https://kpjilykqswlogxhjmnwj.supabase.co/storage/v1/object/public/site/';
 const CURRY_PIC={c_butter:IMG_BASE+'curry-butter.png',c_king:IMG_BASE+'curry-king.png'};
 /* 抽獎獎品圖（by code）+ 熊客贈品圖（by 名） */
-const PRIZE_IMG={p_egg:IMG_BASE+'prize-egg.png',p_grand:IMG_BASE+'prize-grand.png',p_half:IMG_BASE+'prize-half.png',p_oyster:IMG_BASE+'prize-oyster.png',p_fishball:IMG_BASE+'prize-fishball.png'};
-const GIFT_IMG={'咖喱燒賣魚蛋':IMG_BASE+'gift-siumai.png','阿多波炸雞':IMG_BASE+'gift-adobo.png','金屬羹 + 金屬筷子':IMG_BASE+'gift-metal.png'};
+const IMGV='?v=3'; /* 改圖後 bump 版本，避開 Safari/CDN 快取舊圖 */
+const PRIZE_IMG={p_egg:IMG_BASE+'prize-egg.png'+IMGV,p_grand:IMG_BASE+'prize-grand.png'+IMGV,p_half:IMG_BASE+'prize-half.png'+IMGV,p_oyster:IMG_BASE+'prize-oyster.png'+IMGV,p_fishball:IMG_BASE+'prize-fishball.png'+IMGV};
+const GIFT_IMG={'咖喱燒賣魚蛋':IMG_BASE+'gift-siumai.png'+IMGV,'阿多波炸雞':IMG_BASE+'gift-adobo.png'+IMGV,'金屬羹 + 金屬筷子':IMG_BASE+'gift-metal.png'+IMGV};
 function isVoucherCode(c){return c==='p_grand'||c==='p_half';}
 window.openCurryPic=id=>{const pic=CURRY_PIC[id];if(!pic)return;$('overlay').innerHTML='<div class="modal-bg" onclick="closeCurryPic()"><img class="cpic-full" src="'+pic+'" alt=""></div>';};
 window.closeCurryPic=()=>{$('overlay').innerHTML='';};
