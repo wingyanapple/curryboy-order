@@ -274,6 +274,15 @@
   .giftline b{color:#fff}
   .giftbtn{width:100%;margin-top:10px;padding:12px;border:1px solid var(--orange);border-radius:11px;background:#160f0a;color:var(--orange);font-weight:800;font-size:14px}
   .giftmsg{margin-top:10px;color:var(--muted);font-size:13px;text-align:center}
+  .vch-box{width:calc(100% - 32px);max-width:400px;margin:4px auto 10px;background:#160f0a;border:1px solid var(--line);border-radius:14px;padding:14px}
+  .vch-title{font-weight:900;color:var(--orange);font-size:14px;margin-bottom:10px}
+  .vch-msg{font-size:12px;color:var(--muted);margin-top:8px;line-height:1.5}
+  .vch-box .inp{margin-bottom:8px}
+  .vch-row{display:flex;align-items:center;gap:10px;padding:11px 12px;border:1px solid var(--line);border-radius:11px;margin-bottom:8px;background:#100b07}
+  .vch-row.on{border-color:var(--orange);background:#1a1205}
+  .vch-ck{width:24px;height:24px;flex:none;border-radius:7px;border:2px solid var(--line);display:flex;align-items:center;justify-content:center;color:#1a1208;font-weight:900}
+  .vch-row.on .vch-ck{border-color:var(--orange);background:var(--orange)}
+  .vch-tx{flex:1;text-align:left}.vch-tx b{display:block;color:var(--cream2);font-size:14px;font-weight:800}.vch-tx small{display:block;color:var(--muted);font-size:11px;margin-top:2px}
   /* 消費大抽獎：像素風抽獎箱（靜態箱 + 撳掣逐粒彈） */
   .draw-box{width:calc(100% - 24px);max-width:400px;margin:8px auto 16px;background:#160f0a;border:2px solid var(--orange);border-radius:16px;padding:22px 16px;text-align:center}
   .draw-title{font-weight:900;color:var(--orange);font-size:18px;letter-spacing:3px;margin-bottom:20px}
@@ -535,6 +544,7 @@ const CFG={
 let S={screen:'home', cart:[], build:null, checkout:{otype:null,utensil:null,slot:null,phoneErr:'',err:''}, paying:false,
         admin:{logged:false,tab:'orders',orderSort:'created',rep:{mode:'today',day:null,month:''}}, fb:{type:'食物評價',rating:5}};
 try{S.checkout.phone=localStorage.getItem('cb_phone')||'';}catch(e){}  /* 記住上次電話，方便帶出贈品/獎券 */
+S.vch={phone:'',list:null,half:null,foods:[],loading:false,msg:''};  /* 抽獎獎券（購物車頁揀用） */
 
 /* ---------- BUILD logic ---------- */
 function findSet(id){return DB.sets.find(s=>s.id===id);}
@@ -640,7 +650,7 @@ async function payReal(){
   try{
     const resp=await fetch(CFG.FN_URL,{method:'POST',
       headers:{'Content-Type':'application/json','apikey':CFG.ANON,'Authorization':'Bearer '+CFG.ANON},
-      body:JSON.stringify({phone,pickup_slot:c.slot,utensil,order_type:c.otype,total,items,return_base:location.origin+location.pathname})});
+      body:JSON.stringify({phone,pickup_slot:c.slot,utensil,order_type:c.otype,total,items,vouchers:selVoucherIds(),return_base:location.origin+location.pathname})});
     const data=await resp.json().catch(()=>({}));
     if(data&&data.ok&&data.payment_link){
       window.location.href=data.payment_link;return;   // 跳去 Wonder 俾錢（購物車保留，成功返嚟先清）
@@ -868,18 +878,55 @@ function viewCart(){
     return '<div class="citem"><div class="ct">'+it.label+'</div><div class="cd">'+it.desc+'</div>'+noteLine+
       '<div class="cr"><div class="acts"><div class="qty"><button onclick="cartQty('+idx+',-1)">−</button><b>'+it.qty+'</b><button onclick="cartQty('+idx+',1)">＋</button></div>'+editBtn+'<button class="del" onclick="cartDel('+idx+')">刪除</button></div><div class="price">$'+(it.unit*it.qty)+'</div></div></div>';
   }).join('');
+  const vdisc=voucherDiscount(cartTotal());
+  const vfoods=(S.vch.foods||[]).map(vchName).filter(Boolean);
+  const paySum=(vdisc>0||vfoods.length)
+    ? '<div class="promo-sum"><div class="pr-row"><span>小計</span><span>$'+cartTotal()+'</span></div>'+
+      (vdisc>0?'<div class="pr-row disc"><span>半價券（約）</span><span>−$'+vdisc+'</span></div>':'')+
+      (vfoods.length?'<div class="pr-note">免費獎品：'+vfoods.map(esc).join('、')+'</div>':'')+
+      '<div class="pr-row fin"><span>應付（約）</span><span>$'+(cartTotal()-vdisc)+'</span></div></div>'
+    : '<div class="pay"><b>小計</b><span class="v">$'+cartTotal()+'</span></div>';
   return appbar("go('menu')")+'<div class="b-title">購物車 <em>CART</em></div>'+items+
-    '<div class="cta-wrap">'+
-      (promoOn()
-        ? '<div class="promo-sum"><div class="pr-row"><span>原價</span><span>$'+cartTotal()+'</span></div>'+
-          '<div class="pr-row disc"><span>全單9折優惠</span><span>−$'+discAmount()+'</span></div>'+
-          (jpTotal()>0?'<div class="pr-note">日式咖喱飯系列不參與折扣優惠</div>':'')+
-          '<div class="pr-row fin"><span>小計</span><span>$'+payableTotal(0)+'</span></div></div>'
-        : '<div class="pay"><b>小計</b><span class="v">$'+cartTotal()+'</span></div>')+
+    voucherSectionHTML()+
+    '<div class="cta-wrap">'+paySum+
       '<button class="cta" onclick="go(\'checkout\')">前往結帳　CHECKOUT</button></div>';
 }
 window.cartQty=(i,d)=>{S.cart[i].qty=Math.max(1,S.cart[i].qty+d);Store.save();render();};
 window.cartDel=i=>{S.cart.splice(i,1);render();};
+/* ---------- 抽獎獎券（購物車頁揀用） ---------- */
+window.chkVouchers=function(){
+  const ph=(($('vchPhone')?$('vchPhone').value:'')||S.checkout.phone||'').replace(/\s/g,'');
+  if(!/^[2-9]\d{7}$/.test(ph)){S.vch.msg='請輸入有效嘅 8 位電話號碼';render();return;}
+  S.vch.phone=ph;S.vch.loading=true;S.vch.msg='';S.vch.list=null;S.vch.half=null;S.vch.foods=[];render();
+  fetch(CFG.SUPABASE_URL+'/rest/v1/rpc/cb_vouchers_active',{method:'POST',headers:{'Content-Type':'application/json',apikey:CFG.ANON,Authorization:'Bearer '+CFG.ANON},body:JSON.stringify({p_phone:ph})})
+    .then(r=>r.json()).then(d=>{S.vch.loading=false;S.vch.list=Array.isArray(d)?d:[];S.vch.msg=S.vch.list.length?'':'呢個電話暫時未有優惠券';render();})
+    .catch(()=>{S.vch.loading=false;S.vch.msg='查詢失敗，請再試';render();});
+};
+window.toggleHalf=function(id){S.vch.half=(S.vch.half===id?null:id);render();};
+window.toggleFood=function(id){const i=S.vch.foods.indexOf(id);if(i>=0)S.vch.foods.splice(i,1);else S.vch.foods.push(id);render();};
+function selVoucherIds(){return (S.vch.half?[S.vch.half]:[]).concat(S.vch.foods||[]);}
+function voucherDiscount(base){if(!S.vch.half)return 0;return Math.min(Math.round(base*0.5),150);}
+function vchName(id){const f=(S.vch.list||[]).find(x=>x.id===id);return f?f.name:'';}
+function voucherSectionHTML(){
+  const v=S.vch;let inner='';
+  if(v.loading){inner='<div class="vch-msg">查緊…</div>';}
+  else if(!v.list){
+    inner='<input id="vchPhone" class="inp" inputmode="numeric" placeholder="輸入電話查你嘅優惠券" value="'+(v.phone||S.checkout.phone||'')+'">'+
+      '<button class="giftbtn" onclick="chkVouchers()">查我有冇優惠券 / 獎品</button>';
+    if(v.msg)inner+='<div class="vch-msg">'+esc(v.msg)+'</div>';
+  }else if(!v.list.length){
+    inner='<div class="vch-msg">呢個電話暫時未有優惠券</div><button class="giftbtn" onclick="S.vch.list=null;render()">換電話查</button>';
+  }else{
+    inner=v.list.map(vo=>{
+      const isHalf=(vo.vtype==='voucher_grand'||vo.vtype==='voucher_half');
+      const sel=isHalf?(v.half===vo.id):(v.foods.indexOf(vo.id)>=0);
+      const sub=isHalf?('下單半價，最多 −$150'+(vo.vtype==='voucher_grand'?' · 30日內每日一次':'')):'免費加品';
+      return '<div class="vch-row'+(sel?' on':'')+'" onclick="'+(isHalf?'toggleHalf':'toggleFood')+'('+vo.id+')"><div class="vch-ck">'+(sel?'✓':'')+'</div><div class="vch-tx"><b>'+esc(vo.name)+'</b><small>'+sub+'</small></div></div>';
+    }).join('');
+    inner+='<div class="vch-msg">半價券一張單只可用一張；免費獎品可揀多樣。</div>';
+  }
+  return '<div class="vch-box"><div class="vch-title">我的優惠券 / 獎品</div>'+inner+'</div>';
+}
 
 function viewCheckout(){
   const c=S.checkout;
@@ -910,12 +957,16 @@ function viewCheckout(){
     '</div>'+
     (c.err?'<div class="errline">'+c.err+'</div>':'')+
     '<div class="cta-wrap"><button class="cont-btn" onclick="go(\'menu\')">＋ 繼續落單（再揀多個餐）</button>'+
-      (promoOn()
-        ? '<div class="promo-sum"><div class="pr-row"><span>原價</span><span>$'+total+'</span></div>'+
-          '<div class="pr-row disc"><span>全單9折優惠</span><span>−$'+discAmount()+'</span></div>'+
-          (jpTotal()>0?'<div class="pr-note">日式咖喱飯系列不參與折扣優惠</div>':'')+
-          '<div class="pr-row fin"><span>應付</span><span>$'+payableTotal(c.utensil)+'</span></div></div>'
-        : '<div class="pay"><b>合計</b><span class="v">$'+total+'</span></div>')+
+      (function(){
+        const vd=voucherDiscount(total);const vf=(S.vch.foods||[]).map(vchName).filter(Boolean);
+        if(vd>0||vf.length){
+          return '<div class="promo-sum"><div class="pr-row"><span>小計</span><span>$'+total+'</span></div>'+
+            (vd>0?'<div class="pr-row disc"><span>半價券</span><span>−$'+vd+'</span></div>':'')+
+            (vf.length?'<div class="pr-note">免費獎品：'+vf.map(esc).join('、')+'（$0）</div>':'')+
+            '<div class="pr-row fin"><span>應付</span><span>$'+(total-vd)+'</span></div></div>';
+        }
+        return '<div class="pay"><b>合計</b><span class="v">$'+total+'</span></div>';
+      })()+
       '<button class="cta" '+(S.paying?'disabled style="opacity:.6"':'onclick="payReal()"')+'>'+(S.paying?'處理中…':'確認付款　PAY')+'</button><div style="text-align:center;color:var(--muted);font-size:11px;margin-top:8px">㩒付款會跳去 Wonder 安全付款頁</div></div>';
 }
 window.pickSlot=t=>{S.checkout.slot=t;S.checkout.err='';render();};
