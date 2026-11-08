@@ -270,8 +270,10 @@
   .promo-sum .pr-row.fin{border-top:1px dashed #3a2a14;margin-top:4px;padding-top:8px;font-size:16px}
   .promo-sum .pr-row.fin span:last-child{font-family:var(--pixel);color:var(--gold);font-size:20px}
   .promo-sum .pr-note{font-size:11px;color:var(--muted);padding:2px 0 4px;line-height:1.5}
-  .giftline{background:#1a1205;border:1px solid var(--orange);border-radius:12px;padding:10px 13px;margin-bottom:10px;color:var(--gold);font-size:13px;line-height:1.6}
+  .giftline{background:#1a1205;border:1px solid var(--orange);border-radius:12px;padding:10px 13px;margin-top:10px;color:var(--gold);font-size:13px;line-height:1.6}
   .giftline b{color:#fff}
+  .giftbtn{width:100%;margin-top:10px;padding:12px;border:1px solid var(--orange);border-radius:11px;background:#160f0a;color:var(--orange);font-weight:800;font-size:14px}
+  .giftmsg{margin-top:10px;color:var(--muted);font-size:13px;text-align:center}
   .cta{display:block;width:100%;text-align:center;font-family:var(--pixel);font-size:12px;color:#1a1208;background:var(--orange);border:none;border-radius:13px;padding:16px;box-shadow:4px 4px 0 #000}
   .cta:disabled{opacity:.45;box-shadow:none}
   .fbmodal-bg{position:fixed;inset:0;background:rgba(0,0,0,.74);display:flex;align-items:center;justify-content:center;z-index:9999;padding:26px}
@@ -865,7 +867,6 @@ window.cartDel=i=>{S.cart.splice(i,1);render();};
 
 function viewCheckout(){
   const c=S.checkout;
-  chkGift();
   const nowSt=nowSlotStatus();const nowAvail=nowSt==='available';
   const nowCls='slot now'+(nowAvail?(c.slot==='即時'?' on':''):(nowSt==='soon'?' soon':' full'));
   const nowLbl=nowSt==='full'?'<small>已關</small>':nowSt==='soon'?'<small>11:00起</small>':nowSt==='past'?'<small>已過</small>':'';
@@ -886,11 +887,13 @@ function viewCheckout(){
       '<div class="ustep '+(uHas?'on':'')+'"><span class="w">需要</span><button onclick="setUtensil(Math.max(1,(S.checkout.utensil||0)-1))">−</button><b>'+(uHas?c.utensil:0)+'</b><button onclick="setUtensil((S.checkout.utensil||0)+1)">＋</button><small>$1/份</small></div>'+
     '</div></div>'+
     '<div class="field"><div class="lab">取餐時間 <span class="req">必選</span></div>'+slotsBox+'</div>'+
-    '<div class="field"><div class="lab">聯絡電話 <span class="req">必填</span></div><input id="phoneInput" class="inp" inputmode="numeric" placeholder="9123 4567" value="'+(c.phone||'')+'" oninput="S.checkout.phone=this.value;chkGiftDebounced()">'+
-      (c.phoneErr?'<div class="errline">'+c.phoneErr+'</div>':'<div class="hint">如餐點缺貨或有任何疑問，我們將會聯絡您。</div>')+'</div>'+
+    '<div class="field"><div class="lab">聯絡電話 <span class="req">必填</span></div><input id="phoneInput" class="inp" inputmode="numeric" placeholder="9123 4567" value="'+(c.phone||'')+'" oninput="S.checkout.phone=this.value;S.giftNames=[];S.giftMsg=\'\'">'+
+      (c.phoneErr?'<div class="errline">'+c.phoneErr+'</div>':'<div class="hint">如餐點缺貨或有任何疑問，我們將會聯絡您。</div>')+
+      '<button class="giftbtn" onclick="checkGiftBtn()">'+(S.giftLoading?'查緊…':'查我有冇贈品 / 優惠券')+'</button>'+
+      ((S.giftNames&&S.giftNames.length)?'<div class="giftline">消費換獎品活動 · 你有免費贈品：<b>'+S.giftNames.map(esc).join('、')+'</b>'+(cartTotal()>=48?'（本單會自動送出，$0）':'（本單滿 $48 自動送出；你而家 $'+cartTotal()+'，仲差 $'+(48-cartTotal())+'）')+'</div>':(S.giftMsg?'<div class="giftmsg">'+esc(S.giftMsg)+'</div>':''))+
+    '</div>'+
     (c.err?'<div class="errline">'+c.err+'</div>':'')+
     '<div class="cta-wrap"><button class="cont-btn" onclick="go(\'menu\')">＋ 繼續落單（再揀多個餐）</button>'+
-      ((S.giftNames&&S.giftNames.length)?'<div class="giftline">消費換獎品活動 · 本單免費贈品：<b>'+S.giftNames.map(esc).join('、')+'</b>（$0，付款後自動送出）</div>':'')+
       (promoOn()
         ? '<div class="promo-sum"><div class="pr-row"><span>原價</span><span>$'+total+'</span></div>'+
           '<div class="pr-row disc"><span>全單9折優惠</span><span>−$'+discAmount()+'</span></div>'+
@@ -902,15 +905,16 @@ function viewCheckout(){
 window.pickSlot=t=>{S.checkout.slot=t;S.checkout.err='';render();};
 window.setUtensil=n=>{S.checkout.utensil=n;render();};
 window.setOtype=t=>{S.checkout.otype=t;S.checkout.err='';render();};
-/* 熊客贈品：電話 valid + 本單滿$48 先查 pending 贈品（結帳頁顯示，付款後 trigger 自動送出） */
-function chkGift(){
-  const ph=(S.checkout.phone||'').replace(/\s/g,'');
-  if(!/^[2-9]\d{7}$/.test(ph)||cartTotal()<48){if(S.giftNames&&S.giftNames.length){S.giftNames=[];}S._giftFor='';return;}
-  if(S._giftFor===ph)return; S._giftFor=ph;
+/* 熊客贈品：客撳「查我有冇贈品/優惠券」先查 pending 贈品（結帳頁），付款後 trigger 自動送出 */
+window.checkGiftBtn=function(){
+  const ph=($('phoneInput')?$('phoneInput').value:'').replace(/\s/g,'');
+  S.checkout.phone=ph; S.giftNames=[]; S.giftMsg='';
+  if(!/^[2-9]\d{7}$/.test(ph)){S.giftMsg='請先輸入有效嘅 8 位電話號碼';render();return;}
+  S.giftLoading=true;render();
   fetch(CFG.SUPABASE_URL+'/rest/v1/rpc/cb_loyalty_pending',{method:'POST',headers:{'Content-Type':'application/json',apikey:CFG.ANON,Authorization:'Bearer '+CFG.ANON},body:JSON.stringify({p_phone:ph})})
-    .then(r=>r.json()).then(d=>{S.giftNames=Array.isArray(d)?d:[];render();}).catch(()=>{});
-}
-var _giftT;window.chkGiftDebounced=function(){clearTimeout(_giftT);_giftT=setTimeout(chkGift,500);};
+    .then(r=>r.json()).then(d=>{S.giftLoading=false;S.giftNames=Array.isArray(d)?d:[];S.giftMsg=S.giftNames.length?'':'呢個電話暫時未有待送贈品';render();})
+    .catch(()=>{S.giftLoading=false;S.giftMsg='查詢失敗，請再試';render();});
+};
 
 function viewSuccess(){
   const o=S.lastOrder;
